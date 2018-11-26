@@ -19,6 +19,24 @@ rename husbc hc
 *Get the summary of the data
 summ
 
-tab lfp wc
-tab lfp k618
+*Fitting the model by probit regression
 probit lfp k5 k618 age lwg inc i.wc i.hc
+*Predicting the probability of labor-force  participation
+predict prob_lfp
+summ prob_lfp,detail
+
+*use margins for each level of hc
+tab lfp hc
+margins hc, atmeans
+*use margins for each level of wc
+tab lfp wc
+margins wc, atmeans
+*use margins for each level of wc and age
+margins, at(age=(30(10)60) wc=(0 1)) atmeans vsquish
+marginsplot
+
+*use margins for each level of k5
+tab lfp k5
+margins, at(k5=(0 1 2 3)) atmeans
+marginsplot
+
