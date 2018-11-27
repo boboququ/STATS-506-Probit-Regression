@@ -1,0 +1,169 @@
+---
+title: "Probit Regression in R, Python, Stata, and SAS"
+author: "Shi Lan, Roya Talibova, Bo Qu,Jiehui Ding"
+date: "2018/11/26"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+```{r}
+library(RStata)
+```
+
+##Model Introduction 
+(tab content)
+
+
+##Languages {.tabset}
+
+###R
+
+(tab content)
+
+###Python
+
+TODO: See if Python Chunks works in R markdown. Maybe add output as images instead of chunks.
+
+
+####Loading Data
+The data set has binary response variable lfp which stands for labor force participation
+
+First we start by loading the data into memory using pandas package. We also load some relevant packages used in this analysis. 
+
+
+```
+import pandas as pd
+import numpy as np
+from statsmodels.discrete.discrete_model import Probit
+
+data = pd.read_csv('https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv')
+
+print(data.head())
+```
+
+This looks like 
+
+```
+
+   Unnamed: 0  lfp  k5  k618  age   wc  hc       lwg        inc
+0           1  yes   1     0   32   no  no  1.210165  10.910001
+1           2  yes   0     2   30   no  no  0.328504  19.500000
+2           3  yes   1     3   35   no  no  1.514128  12.039999
+3           4  yes   0     3   34   no  no  0.092115   6.800000
+4           5  yes   1     2   31  yes  no  1.524280  20.100000
+
+
+```
+####Data Cleaning
+
+Since some data is read in as strings we can transform them into binary categorical data using the following command. We also drop the first column as it is read in with row numbers, which we do not need.
+
+```
+data = data.drop(data.columns[0], axis = 1)
+
+data["lfp"] = data["lfp"] == "yes"
+data["wc"] = data["wc"] == "yes"
+data["hc"] = data["hc"] == "yes"
+
+```
+
+
+Looking at the data again we see:
+
+
+```
+
+    lfp  k5  k618  age     wc     hc       lwg        inc
+0  True   1     0   32  False  False  1.210165  10.910001
+1  True   0     2   30  False  False  0.328504  19.500000
+2  True   1     3   35  False  False  1.514128  12.039999
+3  True   0     3   34  False  False  0.092115   6.800000
+4  True   1     2   31   True  False  1.524280  20.100000
+
+
+```
+
+
+####Summary Statistics
+
+To generate some summary statistics we can use the functions describe on a data frame.
+
+```
+print(data.describe())
+
+```
+
+This generates summary statistics for the continuous variables in our dataset. 
+
+
+```
+               k5        k618         age         lwg         inc
+count  753.000000  753.000000  753.000000  753.000000  753.000000
+mean     0.237716    1.353254   42.537849    1.097115   20.128965
+std      0.523959    1.319874    8.072574    0.587556   11.634799
+min      0.000000    0.000000   30.000000   -2.054124   -0.029000
+25%      0.000000    0.000000   36.000000    0.818086   13.025000
+50%      0.000000    1.000000   43.000000    1.068403   17.700001
+75%      0.000000    2.000000   49.000000    1.399717   24.466000
+max      3.000000    8.000000   60.000000    3.218876   96.000000
+
+```
+
+
+####Fitting Regression
+
+
+First we break our dataset into response variable and predictor variables. Then we use the statsmodels function to fit our Probit regression.
+
+
+```
+Y = data["lfp"]
+X = data.drop(["lfp"], 1)
+
+model = Probit(Y, X.astype(float))
+result = model.fit()
+print(result.summary())
+
+```
+
+The following is the results of our regression
+
+
+```
+Optimization terminated successfully.
+         Current function value: 0.618620
+         Iterations 5
+                          Probit Regression Results                           
+==============================================================================
+Dep. Variable:                    lfp   No. Observations:                  753
+Model:                         Probit   Df Residuals:                      746
+Method:                           MLE   Df Model:                            6
+Date:                Mon, 26 Nov 2018   Pseudo R-squ.:                 0.09527
+Time:                        23:16:26   Log-Likelihood:                -465.82
+converged:                       True   LL-Null:                       -514.87
+                                        LLR p-value:                 6.234e-19
+==============================================================================
+                 coef    std err          z      P>|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+k5            -0.6136      0.098     -6.249      0.000      -0.806      -0.421
+k618           0.0674      0.034      1.965      0.049       0.000       0.135
+age           -0.0021      0.003     -0.775      0.439      -0.007       0.003
+wc             0.4497      0.133      3.372      0.001       0.188       0.711
+hc             0.1267      0.122      1.040      0.298      -0.112       0.365
+lwg            0.4632      0.084      5.486      0.000       0.298       0.629
+inc           -0.0187      0.005     -3.983      0.000      -0.028      -0.010
+==============================================================================
+
+```
+
+
+###Stata
+
+(tab content)
+
+
+###SAS
+
+(tab content)
