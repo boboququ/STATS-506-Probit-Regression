@@ -21,4 +21,3 @@ Dataset survey & R: Roya Talibova, <talibova@umich.edu>
 Python: Bo Qu, <bqu@umich.edu>   
 STATA: Jiehui Ding, <dingjieh@umich.edu>   
 SAS & readme.md: Lan Shi, <lanshi@umich.edu>   
-

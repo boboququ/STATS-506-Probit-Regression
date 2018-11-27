@@ -253,7 +253,6 @@ summ
 ```
 ![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output2.png?raw=true){width=500px}
 
-
 #### 2.Fitting model by Probit Regression
 
 Now, we fit our data by probit regression. lfp is the response and the remaining variables
@@ -273,6 +272,7 @@ predict prob_lfp
 summ prob_lfp, detail
 ```
 ![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output4.png?raw=true){width=500px}
+
 
 #### 3.Marginal effect
 
@@ -404,7 +404,7 @@ run;
 
 
 #### 2.Fitting model by Probit Regression
-
+>>>>>>> 16bbf44cc96e1399eac40d66dc663801bc230857
 Now, we fit our data by probit regression. lfp is the response and the remaining variables
 are predictors. By adding argument "descending", we would be able to model 1s rather than 0s, which means predicting the probability of woman getting into label force (lfp=1) versus not getting in (lfp=0).
 
