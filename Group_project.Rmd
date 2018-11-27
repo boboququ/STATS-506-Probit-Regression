@@ -1,6 +1,6 @@
 ---
 title: "Probit Regression in R, Python, Stata, and SAS"
-author: "Shi Lan, Roya Talibova, Bo Qu,Jiehui Ding"
+author: "Roya Talibova, Bo Qu, Jiehui Ding, Shi Lan"
 date: "2018/11/26"
 output: 
   html_document:
@@ -9,16 +9,31 @@ output:
 ---
 
 ##Model Introduction 
-(tab content)
 
-##Dataset: Mroz
-(tab content)
+A probit regression is a version of the generalized linear model used to model dichotomous outcome variables. It uses the inverse standard normal distribution as a linear combination of the predictors. The binary outcome variable Y is assumed to have a Bernoulli distribution with parameter p (where the success probability is $p \in (0,1)$). Hence, the probit link function is $$probit(EY) = \Phi^{-1}(p_i) = \Phi^{-1}(P_i[Y=1]) = \sum_{k=0}^{k=n}\beta_kx_{ik}$$ where $$\Phi=\frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\alpha+\beta X} exp(-\frac{1}{2}Z^2)dZ$$. 
+
+##Dataset: Female Labor Participation
+
+In this tutorial, we work on Mroz data set on female labor participation with 8 variables. The data covers a sample of 753 married white women aged between 30 and 60 collected in 1975. The original source for this data is Mroz, T.A. (1987). "[The sensitivity of an empirical model of married women's hours of work to economic and statistical assumptions](http://unionstats.gsu.edu/9220/Mroz_Econometrica_LaborSupply_1987.pdf)." *Econometrica* 55, 765-799. The subset of the original data set used in this study can be found [here](https://vincentarelbundock.github.io/Rdatasets/datasets.html). The description of the variables can be found below. 
+
+```{r ps3_q1_source, message = FALSE, eval=TRUE, echo=FALSE}
+source('./varsam.R')
+```
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE, echo=FALSE}
+cols = c('Variable(s)', 'Description', 'Type')
+knitr::kable(var_sum, col.names = cols)
+```
+
+The goal of the tutorial is to identify whether certain characteristics of a woman's household and personal life can predict her labor-force participation. 
 
 ##Languages {.tabset}
 
 ###R
 
-First, we load data into R by using read.csv given that the data is in a comma separated format.
+#### 1. Data Summary
+
+First, we load data into R by using read.csv given that the data is in a comma-separated format.
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
 
 mroz = read.csv('./mroz.csv')
@@ -48,7 +63,7 @@ Here is the quick summary of the data.
 summary(mroz)
 ```
 
-#### 2.Fitting model by Probit Regression
+#### 2. Fitting model by Probit Regression
 
 Next, we run a probit regression using lfp as a response variable and all the remaining variables as predictors. 
 
@@ -60,9 +75,33 @@ mroz.probit <- glm(lfp ~ k5 + k618 + age + wc + hc + lwg + inc,
 summary(mroz.probit)
 ```
 
+#### 3. Marginal effect
+
+We first make a cross-tab of categorical predictors with our binary response variable. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+
+table(mroz$lfp, mroz$hc)
+table(mroz$lfp, mroz$wc)
+```
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+
+table(mroz$lfp, mroz$hc)
+table(mroz$lfp, mroz$wc)
+```
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+library(effects)
+
+all.effects <- allEffects(mod = mroz.probit)
+plot(all.effects, type="response", ylim=c(0,1))
+```
+
 ###Python
 
 ####Loading Data
+
 The data set has binary response variable lfp which stands for labor force participation
 
 First we start by loading the data into memory using pandas package. We also load some relevant packages used in this analysis. 
@@ -181,7 +220,7 @@ inc           -0.0187      0.005     -3.983      0.000      -0.028      -0.010
 
 ###Stata
 
-#### 1.Data Summary
+#### 1. Data Summary
 
 Firstly, We import the Mroz data from website and show the first six rows of the dataset.
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
@@ -213,7 +252,7 @@ summ
 ```
 ![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output2.png?raw=true){width=500px}
 
-#### 2.Fitting model by Probit Regression
+#### 2. Fitting model by Probit Regression
 Now, we fit our data by probit regression. lfp is the response and the remaining variables
 are predictors. Looking at the p-values, all variables have highly significant, except k618 and hc.
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
@@ -233,12 +272,9 @@ summ prob_lfp, detail
 ![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output4.png?raw=true){width=500px}
 
  
-#### 3.Marginal effect
-
+#### 3. Marginal effect
 Now, we predict the data for groups defined by levels of categorical variables.
-
 ##### Group by hc
-
 First, we make a table of frequently count of hc and lfp
 we predict the lfp for two groups: hc=0 and hc=1, and we keep other 
 variables at mean. 
@@ -329,4 +365,81 @@ decreasing. Therefore, we can conclude that k5 is a significant predictor.
 
 ###SAS
 
-(tab content)
+#### 1. Data Summary
+Since for the original mroz.csv dataset, there are three covariates whose variable type are binary charater ("yes/no"): lfp, wc, hc. In this part, a processed data file would be used, where the values of the three character type variables are transfered from "yes/no" to numeric 1/0. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Importing data*/
+proc import datafile = 'C:\Users\lanshi\Desktop\Mroz.csv'
+  out = work.mroz
+  dbms = CSV
+  ;
+run;
+```
+
+Display the summary table of the dataset (Seperate the 3 binary variables and the others).
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*For the other non-binary variables*/
+proc means data=mroz;
+ var k5 k618 age lwg inc;
+run;
+```
+
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out1.png){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*For those 3 binary variables, consider individuals and interactions between reponse and wc/hc.*/
+proc freq data=mroz;
+ tables lfp wc hc lfp*wc lfp*hc;
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out2.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out3.png){width=500px}
+
+#### 2. Fitting model by Probit Regression
+Now, we fit our data by probit regression. lfp is the response and the remaining variables
+are predictors. By adding argument "descending", we would be able to model 1s rather than 0s, which means predicting the probability of woman getting into label force (lfp=1) versus not getting in (lfp=0).
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Fitting the data by probit regression*/
+proc logistic data=mroz descending;
+  class lfp wc hc / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+run;
+```
+
+Here are the results we get from the regression:
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out4-2.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out4-3.png){width=500px}
+The result of the Global Null Hypothesis (by Likelihood Ratio, Score and Wald test) indicates that the model is statistically significant. 
+
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out5-1.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out5-2.png){width=500px}
+
+As for each variable in the model, it is shown by the above two tables that: variable k618 and hc both have p-value greater than 0.05, thus under significant level alpha being 0.05, they are not statistically significant. The reason for k618 might be that kids of 6-18 are much more independent than kids less than 6, and their mom could have time to work. Regarding hc, whether husband has attended college won’t really affect their wife’s decision on whether being in the labor force or not.
+
+Detailed Interpretations:
+(Definition of z-score: the probit regression coefficients give the change in the probit index, also called a z-score, for a one unit increase in the predictor variable.)
+•	k5: For each one more kid less than 6 years old, the z-score decreases by 0.8747.
+•	k618: For each one more kid of 6-18 years old, the z-score decreases by 0.0386.
+•	age: For one year increase in a woman’s age, the z-score decreases by 0.0378.
+•	lwg: For a one unit increase in log(wage), the z-score increases by 0.3656.
+•	inc: For a one unit increase in (family income – wage*hours)/1000, the z-score decreases by 0.0205.
+•	wc: Wife having attended college would increases the z-score by 0.4883.
+•	hc: Husband having attended college would increases the z-score by 0.0572.
+
+#### 3. Marginal effect
+Now, we predict the data for groups defined by levels of categorical variables. Keeping other variables at mean.
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Fitting the data by probit regression*/
+proc logistic data=mroz descending plots=EFFECT;
+  class lfp wc hc / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+  output out=estimated predicted=estprob l=lower95 u=upper95;
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out7.png){width=500px}
+The code above also creates several plots for model diagnosis: 
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out6-1.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out6-2.png){width=500px}
+We can see from these diagonosis plots, the regression model's performance is not bad.
