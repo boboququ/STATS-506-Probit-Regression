@@ -391,7 +391,7 @@ proc means data=mroz;
 run;
 ```
 
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out1.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out1.png){width=500px}
 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
 /*For those 3 binary variables, consider individuals and interactions between reponse and wc/hc.*/
@@ -399,8 +399,8 @@ proc freq data=mroz;
  tables lfp wc hc lfp*wc lfp*hc;
 run;
 ```
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out2.png){width=500px}
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out3.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out2.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out3.png){width=500px}
 
 
 #### 2.Fitting model by Probit Regression
@@ -417,12 +417,12 @@ run;
 ```
 
 Here are the results we get from the regression:
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out4-2.png){width=500px}
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out4-3.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out4-2.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out4-3.png){width=500px}
 The result of the Global Null Hypothesis (by Likelihood Ratio, Score and Wald test) indicates that the model is statistically significant. 
 
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out5-1.png){width=500px}
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out5-2.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out5-1.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out5-2.png){width=500px}
 
 As for each variable in the model, it is shown by the above two tables that: variable k618 and hc both have p-value greater than 0.05, thus under significant level alpha being 0.05, they are not statistically significant. The reason for k618 might be that kids of 6-18 are much more independent than kids less than 6, and their mom could have time to work. Regarding hc, whether husband has attended college won’t really affect their wife’s decision on whether being in the labor force or not.
 
@@ -447,8 +447,8 @@ proc logistic data=mroz descending plots=EFFECT;
   output out=estimated predicted=estprob l=lower95 u=upper95;
 run;
 ```
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out7.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out7.png){width=500px}
 The code above also creates several plots for model diagnosis: 
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out6-1.png){width=500px}
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out6-2.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out6-1.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out6-2.png){width=500px}
 We can see from these diagonosis plots, the regression model's performance is not bad.
