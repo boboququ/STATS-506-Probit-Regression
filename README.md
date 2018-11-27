@@ -2,7 +2,7 @@
 This repo contains files of our  group project - A Tutorial on Probit Regression (STATS506, Fall 2018).
 
 ## Dataset
-For Python, R(base), and STATA, we directly use the data from the website here: [mroz.csv](https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv).
+For Python, R(base), and STATA, we directly use the data from the website here: [mroz.csv](https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv).    
 While for SAS, since it's difficult for SAS to transfer character variable "yes/no" into numeric variable 1/0, we use an updated version of this dataset: [Mroz.csv](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/Mroz.csv)
 
 ## Languages 
