@@ -234,8 +234,11 @@ summ prob_lfp, detail
 
  
 #### 3.Marginal effect
+
 Now, we predict the data for groups defined by levels of categorical variables.
+
 ##### Group by hc
+
 First, we make a table of frequently count of hc and lfp
 we predict the lfp for two groups: hc=0 and hc=1, and we keep other 
 variables at mean. 
