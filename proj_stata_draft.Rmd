@@ -1,0 +1,127 @@
+---
+title: "Probit Regression in R, Python, Stata, and SAS"
+author: "Shi Lan, Roya Talibova, Bo Qu,Jiehui Ding"
+date: "2018/11/26"
+output: 
+  html_document:
+    toc: true
+    
+---
+```{r}
+library(RStata)
+```
+
+##Model Introduction 
+(tab content)
+
+
+##Languages {.tabset}
+
+###R
+
+(tab content)
+
+###Python
+
+(tab content)
+
+###Stata
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*Importing data 
+import delimited https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv, clear
+save mroz,replace
+use mroz,clear
+*List the first six rows 
+list if v1<=6
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output1.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*Change variables with values yes/no to 1/0
+gen lfpart =1 if lfp == "yes"
+replace lfpart =0 if lfp == "no"
+gen wifec =1 if wc == "yes"
+replace wifec =0 if wc == "no"
+gen husbc =1 if hc == "yes"
+replace husbc =0 if hc == "no"
+drop lfp wc hc
+rename lfpart lfp
+rename wifec wc
+rename husbc hc
+*Get the summary of the data
+summ
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output2.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*Fitting the model by probit regression
+probit lfp k5 k618 age lwg inc i.wc i.hc
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output3.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*Predicting the probability of labor-force  participation
+predict prob_lfp
+summ prob_lfp,detail
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output4.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+tab lfp hc
+*use margins for each level of hc
+margins hc, atmeans
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output5.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*use margins for each level of hc
+margins hc, atmeans
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output6.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+tab lfp wc
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output7.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*use margins for each level of wc
+margins wc, atmeans
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output8.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*use margins for each level of wc and age
+margins, at(age=(30(10)60) wc=(0 1)) atmeans vsquish
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output10.png?raw=true){width=500px}
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output11.png?raw=true){width=500px}
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output9.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+marginsplot
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/graph2.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+tab lfp k5
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output12.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*use margins for each level of k5
+margins, at(k5=(0 1 2 3)) atmeans
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output13.png?raw=true){width=500px}
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output14.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+marginsplot
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/graph1.png?raw=true){width=500px}
+
+
+###SAS
+
+(tab content)
