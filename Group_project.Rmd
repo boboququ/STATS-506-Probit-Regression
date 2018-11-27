@@ -34,6 +34,7 @@ The goal of the tutorial is to identify whether certain characteristics of a wom
 #### 1. Data Summary
 
 First, we load data into R by using read.csv given that the data is in a comma-separated format.
+
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
 
 mroz = read.csv('./mroz.csv')
@@ -220,7 +221,7 @@ inc           -0.0187      0.005     -3.983      0.000      -0.028      -0.010
 
 ###Stata
 
-#### 1. Data Summary
+#### 1.Data Summary
 
 Firstly, We import the Mroz data from website and show the first six rows of the dataset.
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
@@ -252,7 +253,9 @@ summ
 ```
 ![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output2.png?raw=true){width=500px}
 
-#### 2. Fitting model by Probit Regression
+
+#### 2.Fitting model by Probit Regression
+
 Now, we fit our data by probit regression. lfp is the response and the remaining variables
 are predictors. Looking at the p-values, all variables have highly significant, except k618 and hc.
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
@@ -271,10 +274,12 @@ summ prob_lfp, detail
 ```
 ![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output4.png?raw=true){width=500px}
 
- 
-#### 3. Marginal effect
+#### 3.Marginal effect
+
 Now, we predict the data for groups defined by levels of categorical variables.
+
 ##### Group by hc
+
 First, we make a table of frequently count of hc and lfp
 we predict the lfp for two groups: hc=0 and hc=1, and we keep other 
 variables at mean. 
@@ -365,7 +370,8 @@ decreasing. Therefore, we can conclude that k5 is a significant predictor.
 
 ###SAS
 
-#### 1. Data Summary
+#### 1.Data Summary
+
 Since for the original mroz.csv dataset, there are three covariates whose variable type are binary charater ("yes/no"): lfp, wc, hc. In this part, a processed data file would be used, where the values of the three character type variables are transfered from "yes/no" to numeric 1/0. 
 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
@@ -396,7 +402,9 @@ run;
 ![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out2.png){width=500px}
 ![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/sas_outs/sas_out3.png){width=500px}
 
-#### 2. Fitting model by Probit Regression
+
+#### 2.Fitting model by Probit Regression
+
 Now, we fit our data by probit regression. lfp is the response and the remaining variables
 are predictors. By adding argument "descending", we would be able to model 1s rather than 0s, which means predicting the probability of woman getting into label force (lfp=1) versus not getting in (lfp=0).
 
@@ -428,7 +436,8 @@ Detailed Interpretations:
 •	wc: Wife having attended college would increases the z-score by 0.4883.
 •	hc: Husband having attended college would increases the z-score by 0.0572.
 
-#### 3. Marginal effect
+#### 3.Marginal effect
+
 Now, we predict the data for groups defined by levels of categorical variables. Keeping other variables at mean.
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
 /*Fitting the data by probit regression*/
