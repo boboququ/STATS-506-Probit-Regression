@@ -8,6 +8,8 @@ output:
     
 ---
 
+The purpose of this tutorial is to provide a basic understanding of Probit Regression and its implementation in R, Python, Stata, and SAS, using the "Female Labor Force Participation" data set.
+
 ##Model Introduction 
 
 A probit regression is a version of the generalized linear model used to model dichotomous outcome variables. It uses the inverse standard normal distribution as a linear combination of the predictors. The binary outcome variable Y is assumed to have a Bernoulli distribution with parameter p (where the success probability is $p \in (0,1)$). Hence, the probit link function is $$probit(EY) = \Phi^{-1}(p_i) = \Phi^{-1}(P_i[Y=1]) = \sum_{k=0}^{k=n}\beta_kx_{ik}$$ where $$\Phi=\frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\alpha+\beta X} exp(-\frac{1}{2}Z^2)dZ$$. 
@@ -36,31 +38,23 @@ The goal of the tutorial is to identify whether certain characteristics of a wom
 First, we load data into R by using read.csv given that the data is in a comma-separated format.
 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
-
 mroz = read.csv('./mroz.csv')
 ```
 
 This is what the first six rows look like in R:
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
-
 head(mroz)
 ```
 
-Then, we change all binary variables to be numeric and factorize them. 
+Then, we change all binary variables to be numeric. 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
-
 mroz$lfp = ifelse(mroz$lfp=="yes", 1, 0)
 mroz$wc = ifelse(mroz$wc=="yes", 1, 0)
 mroz$hc = ifelse(mroz$hc=="yes", 1, 0)
-
-mroz$lfp = factor(mroz$lfp)
-mroz$wc = factor(mroz$wc)
-mroz$hc = factor(mroz$hc)
 ```
 
 Here is the quick summary of the data. 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
-
 summary(mroz)
 ```
 
@@ -69,32 +63,88 @@ summary(mroz)
 Next, we run a probit regression using lfp as a response variable and all the remaining variables as predictors. 
 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
-
 mroz.probit <- glm(lfp ~ k5 + k618 + age + wc + hc + lwg + inc, 
                   data = mroz,
                   family = binomial(link = "probit"))
 summary(mroz.probit)
 ```
 
-#### 3. Marginal effect
-
-We first make a cross-tab of categorical predictors with our binary response variable. 
+We can also obtain confidence intervals for the coefficient estimates.
 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+confint(mroz.probit)
+```
 
-table(mroz$lfp, mroz$hc)
-table(mroz$lfp, mroz$wc)
+
+#### 3. Marginal effect
+
+We first make a cross-tab of categorical predictors with our binary response variable and calculate adjusted predictions of lfp for two levels of hc and wc variables. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+addmargins(table(mroz$lfp, mroz$hc, deparse.level=2))
 ```
 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+hc_data0 = data.frame(k5 = mean(mroz$k5), k618 = mean(mroz$k618), age=mean(mroz$age), 
+                      lwg= mean(mroz$lwg), inc=mean(mroz$inc), hc=0, wc=mean(mroz$wc))
+hc_data1 = data.frame(k5 = mean(mroz$k5), k618 = mean(mroz$k618), age=mean(mroz$age), 
+                      lwg= mean(mroz$lwg), inc=mean(mroz$inc), hc=1, wc=mean(mroz$wc))
 
-table(mroz$lfp, mroz$hc)
-table(mroz$lfp, mroz$wc)
+h0 = predict(mroz.probit, hc_data0, type="response", se=TRUE)
+h1 = predict(mroz.probit, hc_data1, type="response", se=TRUE)
+
+hc_fit = data.frame(Margin = c(h0$fit[1], h1$fit[1]), se=c(h0$se.fit[1], h1$se.fit[1]))
+hc_fit
+```
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+addmargins(table(mroz$lfp, mroz$wc, deparse.level=2))
+```
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+wc_data0 = data.frame(k5 = mean(mroz$k5), k618 = mean(mroz$k618), age=mean(mroz$age), 
+                      lwg= mean(mroz$lwg), inc=mean(mroz$inc), hc = mean(mroz$hc), wc=0)
+wc_data1 = data.frame(k5 = mean(mroz$k5), k618 = mean(mroz$k618), age=mean(mroz$age), 
+                      lwg= mean(mroz$lwg), inc=mean(mroz$inc), hc = mean(mroz$hc), wc=1)
+
+w0 = predict(mroz.probit, wc_data0, type="response", se=TRUE)
+w1 = predict(mroz.probit, wc_data1, type="response", se=TRUE)
+
+wc_fit = data.frame(Margin = c(w0$fit[1], w1$fit[1]), se=c(w0$se.fit[1], w1$se.fit[1]))
+wc_fit
+```
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+wc_data0_age=data.frame(k5=rep(mean(mroz$k5), 4), k618=rep(mean(mroz$k618), 4), 
+                        age=c(30, 40, 50, 60), lwg=rep(mean(mroz$lwg), 4), 
+                        inc=rep(mean(mroz$inc), 4), wc=rep(0, 4), 
+                        hc=rep(mean(mroz$hc), 4))
+
+wc_data1_age=data.frame(k5=rep(mean(mroz$k5), 4), k618=rep(mean(mroz$k618), 4), 
+                        age=c(30, 40, 50, 60), lwg=rep(mean(mroz$lwg), 4), 
+                        inc=rep(mean(mroz$inc), 4), wc=rep(1, 4), 
+                        hc=rep(mean(mroz$hc), 4))
+
+m0=predict(mroz.probit, wc_data0_age, type="response", se=TRUE)
+m1=predict(mroz.probit, wc_data1_age, type="response", se=TRUE)
+
+wc_fit_age = data.frame(Margin_wc0=m0$fit, Margin_wc1=m1$fit, se_wc0=m0$se.fit, se_wc1=m1$se.fit)
+wc_fit_age
+```
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+k_data=data.frame(k5=c(0,1,2,3), k618=rep(mean(mroz$k618), 4), age=rep(mean(mroz$age), 4), 
+                  lwg=rep(mean(mroz$lwg), 4), inc=rep(mean(mroz$inc), 4), 
+                  wc = rep(mean(mroz$wc), 4), hc=rep(mean(mroz$hc), 4))
+
+k0=predict(mroz.probit, k_data, type="response", se=TRUE)
+
+k_fit = data.frame(Margin_k=k0$fit, se_k=k0$se.fit)
+k_fit
 ```
 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
 library(effects)
-
 all.effects <- allEffects(mod = mroz.probit)
 plot(all.effects, type="response", ylim=c(0,1))
 ```
@@ -375,7 +425,6 @@ decreasing. Therefore, we can conclude that k5 is a significant predictor.
 Since for the original mroz.csv dataset, there are three covariates whose variable type are binary charater ("yes/no"): lfp, wc, hc. In this part, a processed data file would be used, where the values of the three character type variables are transfered from "yes/no" to numeric 1/0. 
 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
-<<<<<<< HEAD
 /*Importing data*/
 proc import datafile = 'C:\Users\lanshi\Desktop\Mroz.csv'
   out = work.mroz
@@ -383,44 +432,6 @@ proc import datafile = 'C:\Users\lanshi\Desktop\Mroz.csv'
   ;
 run;
 ```
-=======
-/*Import the dataset.*/
-proc import datafile = 'Mroz.csv' out=mroz;
-
-/*Display the first 10 rows.*/
-proc print data=mroz(obs=10);
-run;
-```
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/data1.png){width=500px}
-
-```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
-/*Transfer character form ("yes/no") variables (lfp, wc, hc) into binary form (0/1).*/
-proc format;
-	invalue L
-		'yes'=1 'no'=0;
-run;
-		
-data mroz;
-	set mroz;
-	lfp1 = input(lfp,L.);
-	wc1 = input(wc,L.);
-	hc1 = input(hc,L.);
-run;
-		
-data mroz;
-	set mroz (drop = lfp wc hc);
-run;
-		
-data mroz;
-	set mroz (rename=(lfp1=lfp hc1=hc wc1=wc));
-run;
-		
-/*The transfered dataset*/
-proc print data=mroz(obs=10);
-run;
-```
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/data2.png){width=500px}
->>>>>>> sas completed
 
 Display the summary table of the dataset (Seperate the 3 binary variables and the others).
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
@@ -443,14 +454,9 @@ run;
 
 
 #### 2.Fitting model by Probit Regression
-<<<<<<< HEAD
 >>>>>>> 16bbf44cc96e1399eac40d66dc663801bc230857
-=======
-
->>>>>>> sas completed
 Now, we fit our data by probit regression. lfp is the response and the remaining variables
 are predictors. By adding argument "descending", we would be able to model 1s rather than 0s, which means predicting the probability of woman getting into label force (lfp=1) versus not getting in (lfp=0).
-
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
 /*Fitting the data by probit regression*/
 proc logistic data=mroz descending;
@@ -480,44 +486,10 @@ Detailed Interpretations:
 •	hc: Husband having attended college would increases the z-score by 0.0572.
 
 #### 3.Marginal effect
-<<<<<<< HEAD
 
 Now, we predict the data for groups defined by levels of categorical variables. Keeping other variables at mean.
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
 /*Fitting the data by probit regression*/
-=======
-##### Marginal effects plot with 95%CI, for wc, at means:
-```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
-/*Marginal effects plot with 95%CI, for wc, at means*/
-* k5=0.238 k618=1.353 age=42.54 lwg=1.097 inc=20.13 hc=0.392*;
-*In this plot, actually we only need the 2 points on the curve: where wc=0 and wc=1*;
-proc logistic data=mroz descending plots=EFFECT;
-  class lfp / param=ref ;
-  model lfp = k5 k618 age lwg inc wc hc /link=probit;
-  output out=estimated predicted=estprob l=lower95 u=upper95;
-run;
-```
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/m_wc.png){width=500px}
-In this plot, actually we only need the 2 points on the curve: where wc=0 and wc=1.
-
-##### Marginal effects plot with 95%CI, for hc, at means:
-```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
-/*Marginal effects plot with 95%CI, for hc, at means*/
-* k5=0.238 k618=1.353 age=42.56 lwg=1.097 inc=20.13 wc=0.282*;
-*In this plot, actually we only need the 2 points on the curve: where hc=0 and hc=1*;
-proc logistic data=mroz descending plots=EFFECT;
-  class lfp / param=ref ;
-  model lfp = k5 k618 age lwg inc wc hc /link=probit;
-  output out=estimated predicted=estprob l=lower95 u=upper95;
-run;
-```
-![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/m_hc.png){width=500px}
-In this plot, actually we only need the 2 points on the curve: where hc=0 and hc=1.
-
-##### Marginal effects plot for wc*hc, at means
-```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
-/*Marginal effects plot for wc*hc, at means*/
->>>>>>> sas completed
 proc logistic data=mroz descending plots=EFFECT;
   class lfp wc hc / param=ref ;
   model lfp = k5 k618 age lwg inc wc hc /link=probit;
@@ -528,4 +500,9 @@ run;
 The code above also creates several plots for model diagnosis: 
 ![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out6-1.png){width=500px}
 ![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out6-2.png){width=500px}
+
 We can see from these diagonosis plots, the regression model's performance is not bad.
+
+##Conclusion
+
+##References
