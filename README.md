@@ -3,13 +3,10 @@
 This repo contains files of our  group project - A Tutorial on Probit Regression (STATS506, Fall 2018).
 
 ## Dataset
-<<<<<<< HEAD
-For Python, R(base), and STATA, we directly use the data from the website here: [mroz.csv](https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv).    
-While for SAS, since it's difficult for SAS to transfer character variable "yes/no" into numeric variable 1/0, we use an updated version of this dataset: [Mroz.csv](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/Mroz.csv)
-=======
-For  Python, R(base), STATA, and SAS, we use only one dataset, which can be downloaded here: [mroz.csv](https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv).    
 
->>>>>>> sas completed
+For Python, R(base), STATA and SAS, we all use the same dataset, which could be downloaded here: [mroz.csv](https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv).    
+
+For  Python, R(base), STATA, and SAS, we use only one dataset, which can be downloaded here: [mroz.csv](https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv).    
 
 ## Languages 
 The source code file of each language can be found here:
@@ -22,7 +19,7 @@ The source code file of each language can be found here:
 By using Rmarkdown (Source code: [Group_project.Rmd](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Group_project.Rmd)), we created a HTML file: [Group_project.html](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Group_project.html) to present our tutorial.
 
 ## Contributing
-Dataset survey & R: Roya Talibova, <talibova@umich.edu>   
-Python: Bo Qu, <bqu@umich.edu>   
-STATA: Jiehui Ding, <dingjieh@umich.edu>   
+R & Dataset survey: Roya Talibova, <talibova@umich.edu>   
+Python & repo management: Bo Qu, <bqu@umich.edu>   
+STATA & Summary: Jiehui Ding, <dingjieh@umich.edu>   
 SAS & readme.md: Lan Shi, <lanshi@umich.edu>   
