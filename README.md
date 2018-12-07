@@ -13,7 +13,7 @@ The source code file of each language can be found here:
 [SAS](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/SAS/mroz_ls.sas).
 
 ## Result
-By using Rmarkdown (Source code: [Group_final.Rmd](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/Group_Final.Rmd)), we created a HTML file: [Group_final.html](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/Group_Final.html) to present our tutorial.
+By using Rmarkdown (Source code: [Group_Final.Rmd](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/Group_Final.Rmd)), we created a HTML file: [Group_Final.html](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/Group_Final.html) to present our tutorial.
 
 ## Contributing
 R & Dataset survey: Roya Talibova, <talibova@umich.edu>   
