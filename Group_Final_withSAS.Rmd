@@ -1,0 +1,932 @@
+---
+title: "Probit Regression in R, Python, Stata, and SAS"
+author: "Roya Talibova, Bo Qu, Jiehui Ding, Shi Lan"
+date: "2018/11/26"
+output: 
+  html_document:
+    toc: true
+    
+---
+
+The purpose of this tutorial is to provide a basic understanding of Probit Regression and its implementation in R, Python, Stata, and SAS, using the "Female Labor Force Participation" data set.
+
+## Model Introduction 
+
+A probit regression is a version of the generalized linear model used to model dichotomous outcome variables. It uses the inverse standard normal distribution as a linear combination of the predictors. The binary outcome variable Y is assumed to have a Bernoulli distribution with parameter p (where the success probability is $p \in (0,1)$). Hence, the probit link function is $$probit(EY) = \Phi^{-1}(p_i) = \Phi^{-1}(P_i[Y=1]) = \sum_{k=0}^{k=n}\beta_kx_{ik}$$ where $$\Phi=\frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\alpha+\beta X} exp(-\frac{1}{2}Z^2)dZ$$. 
+
+## Dataset: Female Labor Participation
+
+In this tutorial, we work on Mroz data set on female labor participation with 8 variables. The data covers a sample of 753 married white women aged between 30 and 60 collected in 1975. The original source for this data is Mroz, T.A. (1987). "[The sensitivity of an empirical model of married women's hours of work to economic and statistical assumptions](http://unionstats.gsu.edu/9220/Mroz_Econometrica_LaborSupply_1987.pdf)." *Econometrica* 55, 765-799. The subset of the original data set used in this study can be found [here](https://vincentarelbundock.github.io/Rdatasets/datasets.html). The description of the variables can be found below. 
+
+```{r ps3_q1_source, error= TRUE, message = FALSE, eval=TRUE, echo=FALSE}
+library(ggplot2)
+mroz = read.csv('https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv')
+variable=names(mroz)[-1]
+description = c('Labor-force participation of the married white woman', 'Number of children younger than 6 years old', 'Number of children aged 6-18', 'Age in years', 'Wife`s college attendance', 'Husband`s college attendance', 'Log expected wage rate for women in the labor force', 'Family income without the wife`s income')
+type = c('Categorical: 0/1', 'Positive integer', 'Positive integer', 'Positive integer', 'Categorical: 0/1', 'Categorical: 0/1', 'Numerical', 'Numerical')
+var_sum = cbind(variable, description, type)
+```
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE, echo=FALSE}
+cols = c('Variable(s)', 'Description', 'Type')
+knitr::kable(var_sum, col.names = cols)
+```
+
+The goal of the tutorial is to identify whether certain characteristics of a woman's household and personal life can predict her labor-force participation. 
+
+## Languages {.tabset}
+
+### R
+
+#### 1. Data Summary
+
+First, we load data into R by using read.csv given that the data is in a comma-separated format.
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+mroz = read.csv('https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv')
+```
+
+This is what the first six rows look like in R:
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+head(mroz)
+```
+
+Then, we change all binary variables to be numeric. 
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+mroz$lfp = ifelse(mroz$lfp=="yes", 1, 0)
+mroz$wc = ifelse(mroz$wc=="yes", 1, 0)
+mroz$hc = ifelse(mroz$hc=="yes", 1, 0)
+```
+
+Here is the quick summary of the data. 
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+summary(mroz)
+```
+
+#### 2. Fitting model by Probit Regression
+
+Next, we run a probit regression using lfp as a response variable and all the remaining variables as predictors. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+mroz.probit <- glm(lfp ~ k5 + k618 + age + wc + hc + lwg + inc, 
+                  data = mroz,
+                  family = binomial(link = "probit"))
+summary(mroz.probit)
+```
+
+All of the coefficients, except for k618 and hc, are statistically significant. 
+
+We can also obtain confidence intervals for the coefficient estimates.
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+confint(mroz.probit)
+```
+
+#### 3. Marginal effect
+
+We first make a cross-tab of categorical predictors with our binary response variable and calculate adjusted predictions of lfp for two levels of hc and wc variables. 
+
+##### Group by hc
+
+We start by tabulating lfp and hc. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+addmargins(table(mroz$lfp, mroz$hc, deparse.level=2))
+```
+
+Then, we calculate the adjusted predictions of lfp for the two levels of hc variable. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+hc_data0 = data.frame(k5 = mean(mroz$k5), k618 = mean(mroz$k618), age=mean(mroz$age), 
+                      lwg= mean(mroz$lwg), inc=mean(mroz$inc), hc=0, wc=mean(mroz$wc))
+hc_data1 = data.frame(k5 = mean(mroz$k5), k618 = mean(mroz$k618), age=mean(mroz$age), 
+                      lwg= mean(mroz$lwg), inc=mean(mroz$inc), hc=1, wc=mean(mroz$wc))
+
+h0 = predict(mroz.probit, hc_data0, type="response", se=TRUE)
+h1 = predict(mroz.probit, hc_data1, type="response", se=TRUE)
+
+hc_fit = data.frame(Margin = c(h0$fit[1], h1$fit[1]), se=c(h0$se.fit[1], h1$se.fit[1]))
+hc_fit
+```
+
+The marginal probability of husband being a college graduate is is 0.59, while the marginal probability of husband being a high school graduate is slightly lower at 0.57.
+
+##### Group by wc
+
+Here is the tabulation of lfp and wc. As can be seen below, there is a significant imbalance between labor force participation, when the women are college graduates. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+addmargins(table(mroz$lfp, mroz$wc, deparse.level=2))
+```
+
+We also calculate the adjusted predictions of lfp for the two levels of wc variable, while keeping other variables at mean. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+wc_data0 = data.frame(k5 = mean(mroz$k5), k618 = mean(mroz$k618), age=mean(mroz$age), 
+                      lwg= mean(mroz$lwg), inc=mean(mroz$inc), hc = mean(mroz$hc), wc=0)
+wc_data1 = data.frame(k5 = mean(mroz$k5), k618 = mean(mroz$k618), age=mean(mroz$age), 
+                      lwg= mean(mroz$lwg), inc=mean(mroz$inc), hc = mean(mroz$hc), wc=1)
+
+w0 = predict(mroz.probit, wc_data0, type="response", se=TRUE)
+w1 = predict(mroz.probit, wc_data1, type="response", se=TRUE)
+
+wc_fit = data.frame(Margin = c(w0$fit[1], w1$fit[1]), se=c(w0$se.fit[1], w1$se.fit[1]))
+wc_fit
+```
+
+The marginal probability increases from 0.524 to 0.708 when women are college graduates vs. only high-school graduates. 
+
+##### Group by age and wc
+
+We can predict the outcome variable by both age and women's college education. We will use increments of 10 between 30 and 60 as representative ages. As the results show, the older a woman gets, the less are her chances of participating in the labor force. Regardless of age, women's college education always yields a higher probability of labor force participation.  
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+wc_data0_age=data.frame(k5=rep(mean(mroz$k5), 4), k618=rep(mean(mroz$k618), 4), 
+                        age=c(30, 40, 50, 60), lwg=rep(mean(mroz$lwg), 4), 
+                        inc=rep(mean(mroz$inc), 4), wc=rep(0, 4), 
+                        hc=rep(mean(mroz$hc), 4))
+
+wc_data1_age=data.frame(k5=rep(mean(mroz$k5), 4), k618=rep(mean(mroz$k618), 4), 
+                        age=c(30, 40, 50, 60), lwg=rep(mean(mroz$lwg), 4), 
+                        inc=rep(mean(mroz$inc), 4), wc=rep(1, 4), 
+                        hc=rep(mean(mroz$hc), 4))
+
+m0=predict(mroz.probit, wc_data0_age, type="response", se=TRUE)
+m1=predict(mroz.probit, wc_data1_age, type="response", se=TRUE)
+
+wc_fit_age = data.frame(Age=c(30, 40, 50, 60),Margin_wc0=m0$fit, Margin_wc1=m1$fit, se_wc0=m0$se.fit, se_wc1=m1$se.fit)
+wc_fit_age
+```
+
+```{r error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+ggplot(data=wc_fit_age,aes(y=Age)) +
+geom_line(aes( x= Margin_wc0), colour="blue") +
+geom_errorbarh(aes(xmin=Margin_wc0-2*se_wc0, xmax=Margin_wc0+2*se_wc0), height=.1,colour="blue")+
+geom_line(aes(x = Margin_wc1), colour="red")+
+geom_errorbarh(aes(xmin=Margin_wc1-2*se_wc1, xmax=Margin_wc1+2*se_wc1),
+               height=.1,colour="red")+scale_color_manual(labels = c("wc=0","wc=1"), values = c("blue", "red"))+
+coord_flip()+xlab('Probability(Lfp)') +
+  ylab("Age")
+```
+
+##### Group by k5
+
+Below is a cross-tab of lfp with k5. The tabulation shows that the more the number of kids aged below 6 years, the less women participate in the labor force. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+addmargins(table(mroz$lfp, mroz$k5, deparse.level=2))
+```
+
+We can predict lfp at different levels of k5, by keeping other variables at mean. When k5=0, the marginal probability of a woman's participation in the labor force is 0.657, whereas when they have three or more, the probability is at around 0.013. This range is a good indicator of the significance of k5 variable. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+k_data=data.frame(k5=c(0,1,2,3), 
+                  k618=rep(mean(mroz$k618), 4), age=rep(mean(mroz$age), 4), 
+                  lwg=rep(mean(mroz$lwg), 4), inc=rep(mean(mroz$inc), 4), 
+                  wc = rep(mean(mroz$wc), 4), hc=rep(mean(mroz$hc), 4))
+
+k0=predict(mroz.probit, k_data, type="response", se=TRUE)
+
+k_fit = data.frame(k5=c(0,1,2,3),Margin_k=k0$fit, se_k=k0$se.fit)
+k_fit
+```
+
+```{r error=TRUE, warning = FALSE, message=FALSE, eval=TRUE}
+ggplot(data=k_fit,aes(y=k5)) +
+geom_line(aes( x= Margin_k), colour="blue") +
+geom_errorbarh(aes(xmin=Margin_k-2*se_k, xmax=Margin_k+2*se_k), height=.1,colour="blue")+
+coord_flip()+xlab('Probability(Lfp)') +
+  ylab("k5")
+```
+
+
+### Python
+
+#### Data Summary
+
+First we start by loading the data into memory using the pandas package. The data is read in as a pandas dataframe, which is very similar to a R dataframe.
+
+We also load numpy for array manipulation and we will be using the statsmodel package for Probit regression.
+
+```
+import pandas as pd
+import numpy as np
+from statsmodels.discrete.discrete_model import Probit
+data = pd.read_csv('https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv')
+```
+
+To print the first few rows of the data, we use the head function. This is similar to other languages such as R. 
+
+```
+print(data.head())
+```
+
+```
+   Unnamed: 0  lfp  k5  k618  age   wc  hc       lwg        inc
+0           1  yes   1     0   32   no  no  1.210165  10.910001
+1           2  yes   0     2   30   no  no  0.328504  19.500000
+2           3  yes   1     3   35   no  no  1.514128  12.039999
+3           4  yes   0     3   34   no  no  0.092115   6.800000
+4           5  yes   1     2   31  yes  no  1.524280  20.100000
+```
+#### Data Cleaning
+
+Since some of the data is read in as strings, we need to transform them into binary categorical data using the following code. We also drop the first column as it is read in with row numbers, which we do not need.
+
+```
+data = data.drop(data.columns[0], axis = 1)
+data["lfp"] = data["lfp"] == "yes"
+data["wc"] = data["wc"] == "yes"
+data["hc"] = data["hc"] == "yes"
+```
+
+Looking at the data again we see:
+
+```
+    lfp  k5  k618  age     wc     hc       lwg        inc
+0  True   1     0   32  False  False  1.210165  10.910001
+1  True   0     2   30  False  False  0.328504  19.500000
+2  True   1     3   35  False  False  1.514128  12.039999
+3  True   0     3   34  False  False  0.092115   6.800000
+4  True   1     2   31   True  False  1.524280  20.100000
+```
+
+#### Summary Statistics
+
+Before we begin our analysis here is a quick summary of the data. We use the function describe on our dataframe to generate some summary statistics.
+
+```
+print(data.describe())
+```
+
+This generates summary statistics for the continuous variables in our dataset. 
+
+```
+               k5        k618         age         lwg         inc
+count  753.000000  753.000000  753.000000  753.000000  753.000000
+mean     0.237716    1.353254   42.537849    1.097115   20.128965
+std      0.523959    1.319874    8.072574    0.587556   11.634799
+min      0.000000    0.000000   30.000000   -2.054124   -0.029000
+25%      0.000000    0.000000   36.000000    0.818086   13.025000
+50%      0.000000    1.000000   43.000000    1.068403   17.700001
+75%      0.000000    2.000000   49.000000    1.399717   24.466000
+max      3.000000    8.000000   60.000000    3.218876   96.000000
+```
+
+
+#### Fitting Probit Regression
+
+
+First we break our dataset into response variable and predictor variables. We will use lfp as our response variable and all the remaining variable as predictors. Then we use the statsmodels function to fit our Probit regression with our response variable and design matrix. The statsmodels package is unique from other languages and packages as it does not include an intercept term by default. This needs to be manually set. 
+
+
+```
+Y = data["lfp"]
+X = data.drop(["lfp"], 1)
+X = sm.add_constant(X)
+model = Probit(Y, X.astype(float))
+probit_model = model.fit()
+print(probit_model.summary())
+```
+
+The following is the results of our regression. The statsmodels package automatically includes p values and confidence intervals for each coefficient. For those that are familiar with objects, the probit model is stored as a probit model object in Python. All operations with the model are invoked as model.member_function().
+
+
+```
+Optimization terminated successfully.
+         Current function value: 0.601189
+         Iterations 5
+                          Probit Regression Results                           
+==============================================================================
+Dep. Variable:                    lfp   No. Observations:                  753
+Model:                         Probit   Df Residuals:                      745
+Method:                           MLE   Df Model:                            7
+Date:                Fri, 07 Dec 2018   Pseudo R-squ.:                  0.1208
+Time:                        01:40:27   Log-Likelihood:                -452.69
+converged:                       True   LL-Null:                       -514.87
+                                        LLR p-value:                 9.471e-24
+==============================================================================
+                 coef    std err          z      P>|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+const          1.9184      0.381      5.040      0.000       1.172       2.664
+k5            -0.8747      0.114     -7.703      0.000      -1.097      -0.652
+k618          -0.0386      0.040     -0.953      0.340      -0.118       0.041
+age           -0.0378      0.008     -4.971      0.000      -0.053      -0.023
+wc             0.4883      0.135      3.604      0.000       0.223       0.754
+hc             0.0572      0.124      0.461      0.645      -0.186       0.300
+lwg            0.3656      0.088      4.165      0.000       0.194       0.538
+inc           -0.0205      0.005     -4.297      0.000      -0.030      -0.011
+==============================================================================
+```
+It appears that all our predictors are statistically significant at level a except hc and k618. 
+
+#### Marginal Effects
+
+To better understand why our predictors are significant, we attempt to study the marginal effects of our predictors. In this section, we will look at the predictors hc, wc, age, and k5. Unfortunately, there is no member function of the probit class to calculate the standard error of each prediction so this is ommited in this version. 
+
+##### Group by Husband's College Attendance
+
+First we group the data by hc. 
+
+To better understand hc, we tabulate lfp and hc. This is done with the pandas crosstab function. 
+```
+print(pd.crosstab(data["lfp"], data["hc"], margins = True))
+```
+
+```
+hc     False  True  All
+lfp                    
+False    207   118  325
+True     251   177  428
+All      458   295  753
+```
+
+Then we calculate adjusted predictions of lfp for two levels of the hc variable. Creating these adjusted predictors is not very clean in Python compared to other languages. We have to build the array from scratch.
+
+```
+hc_data0 = np.column_stack((
+	1,
+	np.mean(data["k5"]),
+	np.mean(data["k618"]),
+	np.mean(data["age"]),
+	np.mean(data["wc"]),
+	0,
+	np.mean(data["lwg"]),
+	np.mean(data["inc"])
+	))
+	
+	hc_data1 = np.column_stack((
+	1,
+	np.mean(data["k5"]),
+	np.mean(data["k618"]),
+	np.mean(data["age"]),
+	np.mean(data["wc"]),
+	1,
+	np.mean(data["lwg"]),
+	np.mean(data["inc"])
+	))
+```
+
+The results of running this prediction is as follows. 
+
+```
+print(probit_model.predict(hc_data0))
+print(probit_model.predict(hc_data1))
+```
+
+
+```
+[ 0.56938181]
+[ 0.59171968]
+```
+
+We see that the marginal probability of husband being a collage graduate is 0.59, while the marginal probability of husband being a high school graduate is lower at 0.57.
+
+
+##### Group by Wife's College Attendance
+
+Similarly to hc, we tabulate our response variable lfp and predictor wc. We can see that there is a significant imbalance between labor force participation for women that are college graduates.
+```
+print(pd.crosstab(data["lfp"], data["wc"], margins = True))
+```
+
+```
+wc     False  True  All
+lfp                    
+False    257    68  325
+True     284   144  428
+All      541   212  753
+```
+
+We also calculate the adjusted predictions of lfp for the two levels of wc variable, while keeping other variables at the mean. 
+
+```
+wc_data0 = np.column_stack((
+	1,
+	np.mean(data["k5"]),
+	np.mean(data["k618"]),
+	np.mean(data["age"]),
+	0,
+	np.mean(data["hc"]),
+	np.mean(data["lwg"]),
+	np.mean(data["inc"])
+	))
+wc_data1 = np.column_stack((
+	1,
+	np.mean(data["k5"]),
+	np.mean(data["k618"]),
+	np.mean(data["age"]),
+	1,
+	np.mean(data["hc"]),
+	np.mean(data["lwg"]),
+	np.mean(data["inc"])
+	))
+```
+
+The result of running this prediction is as follows:
+
+
+```
+print(probit_model.predict(wc_data0))
+print(probit_model.predict(wc_data1))
+```
+
+```
+[ 0.52380974]
+[ 0.70816505]
+```
+
+It appears that the marginal probability increases from 0.524 to 0.708 when women are college graduates compared to highschool graduates. 
+
+##### Group by Age and Wife's College Attendance
+
+We can predict the outcome variable by both age and women's college education. We use increments of 10 between 30 and 60 as our representative ages. 
+
+```
+wc_data0 = np.column_stack((
+	np.repeat(1,4),
+	np.repeat(np.mean(data["k5"]),4),
+	np.repeat(np.mean(data["k618"]), 4),
+	(30,40,50,60),
+	np.repeat(0,4),
+	np.repeat(np.mean(data["hc"]),4),
+	np.repeat(np.mean(data["lwg"]),4),
+	np.repeat(np.mean(data["inc"]),4)
+	))
+wc_data1 = np.column_stack((
+	np.repeat(1,4),
+	np.repeat(np.mean(data["k5"]),4),
+	np.repeat(np.mean(data["k618"]), 4),
+	(30,40,50,60),
+	np.repeat(1,4),
+	np.repeat(np.mean(data["hc"]),4),
+	np.repeat(np.mean(data["lwg"]),4),
+	np.repeat(np.mean(data["inc"]),4)
+))
+```
+The results of running the prediction is as follows:
+```
+print(probit_model.predict(wc_data0))
+print(probit_model.predict(wc_data1))
+```
+```
+[ 0.70330952  0.5618684   0.41195181  0.27399923]
+[ 0.84667045  0.74021954  0.6047985   0.45523423]
+```
+
+As we can see, the older a women gets, the less chance of her participating in the labor force. Regardless of age, women's college education always yields a higher probability of labor force participation.
+
+
+##### Group by Number of Children 5 years or younger (K5)
+
+Finally we look at the effects of number of children 5 years or younger. As before, here is a cross tabulation of this variable. 
+
+```
+print(pd.crosstab(data["lfp"], data["k5"], margins = True))
+```
+```
+k5       0    1   2  3  All
+lfp                        
+False  231   72  19  3  325
+True   375   46   7  0  428
+All    606  118  26  3  753
+```
+
+Then we predict lfp at different levels of k5, while keeping other variables at their means. 
+
+```
+k5_data = np.column_stack((
+	np.repeat(1,4),
+	(0,1,2,3),
+	np.repeat(np.mean(data["k618"]), 4),
+	np.repeat(np.mean(data["age"]),4),
+	np.repeat(np.mean(data["wc"]),4),
+	np.repeat(np.mean(data["hc"]),4),
+	np.repeat(np.mean(data["lwg"]),4),
+	np.repeat(np.mean(data["inc"]),4)
+	))
+	
+	print(probit_model.predict(k5_data))
+```
+
+```
+[ 0.65730924  0.31932735  0.08942703  0.01324326]
+```
+
+We see that if there are three or more children under the age of 5, there is a 0.013 chance of a woman being in the work force, but when there is no children there is a 0.6573 chance. This is a good indication of the significance of this variable. 
+
+##### Extension
+
+Finally, an overall marginal effect can be observed by calling the get_margeff() method of the probit model class. This is unique to Python. Results are as follows.
+
+
+```
+mfx = probit_model.get_margeff()
+print(mfx.summary())
+```
+
+```
+ Probit Marginal Effects   
+ 
+=====================================
+Dep. Variable:                    lfp
+Method:                          dydx
+At:                           overall
+==============================================================================
+                dy/dx    std err          z      P>|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+k5            -0.2997      0.034     -8.726      0.000      -0.367      -0.232
+k618          -0.0132      0.014     -0.955      0.340      -0.040       0.014
+age           -0.0130      0.002     -5.219      0.000      -0.018      -0.008
+wc             0.1673      0.045      3.696      0.000       0.079       0.256
+hc             0.0196      0.042      0.461      0.645      -0.064       0.103
+lwg            0.1253      0.029      4.311      0.000       0.068       0.182
+inc           -0.0070      0.002     -4.451      0.000      -0.010      -0.004
+==============================================================================
+```
+
+### Stata
+
+#### 1.Data Summary
+
+Firstly, we import the Mroz data from the website and show the first six rows of the dataset.
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*Importing data 
+import delimited https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv, clear
+save mroz,replace
+use mroz,clear
+*List the first six rows 
+list if v1<=6
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output1.png?raw=true){width=500px}
+  
+  
+Then, we change all binary variables to be numeric, and we get a summary of the data. 
+Our response is lfp and its mean is 0.57. The range of age is from 30 to 60. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*Change variables with values yes/no to 1/0
+gen lfpart =1 if lfp == "yes"
+replace lfpart =0 if lfp == "no"
+gen wifec =1 if wc == "yes"
+replace wifec =0 if wc == "no"
+gen husbc =1 if hc == "yes"
+replace husbc =0 if hc == "no"
+drop lfp wc hc
+rename lfpart lfp
+rename wifec wc
+rename husbc hc
+*Get the summary of the data
+summ
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output2.png?raw=true){width=500px}
+  
+  
+#### 2.Fitting model by Probit Regression
+
+Now, we fit our data by probit regression. lfp is the response and the remaining variables
+are predictors. Looking at the p-values, all variables have high sigificance, except k618 and hc.
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*Fitting the data by probit regression
+probit lfp k5 k618 age lwg inc i.wc i.hc
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output3.png?raw=true){width=500px}
+
+  
+  
+We get a summary of the probit prediction from the fitted model, we get that the smallest probability is 0.005691 and the largest probability is 0.9745. The 50% percentile is 0.5782336, which is close to 
+its mean shown above. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*Predicting the probability of labor-force  participation
+predict prob_lfp
+summ prob_lfp, detail
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output4.png?raw=true){width=500px}
+  
+  
+
+#### 3.Marginal effect
+
+Now, we predict the data for groups defined by levels of categorical variables.
+
+##### Group by hc
+
+First, we make a table of frequency counts of hc and lfp and
+we predict the lfp for two groups: hc=0 and hc=1, while keeping other 
+variables at mean. 
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+tab lfp hc
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output5.png?raw=true){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*use margins for each level of hc
+margins hc, atmeans
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output6.png?raw=true){width=500px}
+
+    
+The marginal probability of hc=1 (husband has attained college) is 0.59 and it slightly 
+higher than the marginal probability of hc=0 (husband has not attained college),
+which is 0.57. There is not an obivious differnce. It is reasonable because the p-value of
+hc is very high. 
+
+##### Group by wc
+
+The table of frequency shows that when wc=0, the proportion of lfp is average, 
+which is close to 0.5. However, when wc=1, the proportion of lfp=1 is much higher.
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+tab lfp wc
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output7.png?raw=true){width=500px}
+  
+  
+We predict the lfp for two groups: wc=0 and wc=1, and we keep other variables at mean. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*use margins for each level of wc
+margins wc, atmeans
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output8.png?raw=true){width=500px}
+  
+  
+The result shows that the marginal probability is 0.71 when wc=1, and the marginal 
+probability is 0.52 when wc=0. The probability of participating in the labor-force is higher
+when wife has attended college. We can say that wife's college attendance is an 
+important predictor. 
+
+We can go deeper on the predictor wc. We predict lfp for group by age and wc. Age is at
+every 10 years of age from 30 to 60. Since the output of marginal function is long, we make a plot to visualize the output and it is easier to interpert. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*use margins for each level of wc and age
+margins, at(age=(30(10)60) wc=(0 1)) atmeans vsquish
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output10.png?raw=true){width=500px}
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output11.png?raw=true){width=500px}
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output9.png?raw=true){width=500px}
+
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+marginsplot
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/graph2.png?raw=true){width=500px}
+  
+  
+Looking at the table, we can see the predicted probability of lfp is 0.7033095 if age is 
+30 and wc=0.It will increase to 0.8466704 if age is 30 and wc=1.
+From the marginal plot, we can conclude that when age is increasing, the probability is decreasing. Also, The probability of wc=1 is always higher than wc=0. At age 60, 
+the variablity is the highest because the 95% confidence interval is the widest.
+
+##### Group by k5
+
+The table of frequency shows that the proportion of lfp is decreasing when k5 is 
+increasing. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+tab lfp k5
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output12.png?raw=true){width=500px}
+  
+  
+We predict the lfp by k5= 0 1 2 3, and we keep other variables at mean. Also, we 
+make a plot to visualize the data. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+*use margins for each level of k5
+margins, at(k5=(0 1 2 3)) atmeans
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output13.png?raw=true){width=500px}
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/output_screenshots/output14.png?raw=true){width=500px}
+
+
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+marginsplot
+```
+![](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/graph1.png?raw=true){width=500px}
+  
+  
+The output shows that when women do not have any children 5 years old or younger, 
+the probability of participating in the labor-force is 0.66 which is higher than the average. 
+However, after they had children, the probability of participating in the labor-force is 
+decreasing. Therefore, we can conclude that k5 is a significant predictor. 
+
+### SAS
+
+#### 1.Data Summary
+
+Since for the original mroz.csv dataset, there are three covariates whose variable type are binary charater ("yes/no"): lfp, wc, hc. In this part, a processed data file would be used, where the values of the three character type variables are transfered from "yes/no" to numeric 1/0. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Import the dataset.*/
+proc import datafile = 'Mroz.csv' out=mroz;
+
+/*Transfer character form ("yes/no") variables (lfp, wc, hc) into binary form (0/1).*/
+proc format;
+	invalue L
+		'yes'=1 'no'=0;
+run;
+		
+data mroz;
+	set mroz;
+	lfp1 = input(lfp,L.);
+	wc1 = input(wc,L.);
+	hc1 = input(hc,L.);
+run;
+		
+data mroz;
+	set mroz (drop = lfp wc hc);
+run;
+		
+data mroz;
+	set mroz (rename=(lfp1=lfp hc1=hc wc1=wc));
+run;
+		
+/*The transfered dataset*/
+proc print data=mroz(obs=10);
+run;
+```
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/data2.png){width=350px}
+</center>  
+  
+  
+    
+      
+##### Display the summary table of the dataset 
+(Seperate the 3 binary variables and the others).
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*For the other non-binary variables*/
+proc means data=mroz;
+ var k5 k618 age lwg inc;
+run;
+```
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out1.png){width=500px}
+</center>
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*For those 3 binary variables, consider individuals and interactions between reponse and wc/hc.*/
+proc freq data=mroz;
+ tables lfp wc hc lfp*wc lfp*hc;
+run;
+```
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out2.png){width=500px}
+</center>
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out3.png){width=500px}
+</center>
+
+
+#### 2.Fitting model by Probit Regression
+
+Now, we fit our data by probit regression. lfp is the response and the remaining variables
+are predictors. By adding argument "descending", we would be able to model 1s rather than 0s, which means predicting the probability of woman getting into label force (lfp=1) versus not getting in (lfp=0).
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Fitting the data by probit regression*/
+proc logistic data=mroz descending;
+  class lfp wc hc / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+run;
+```
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out4-2.png){width=350px}
+</center>
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out4-3.png){width=350px}
+</center>  
+<br />
+The result of the Global Null Hypothesis (by Likelihood Ratio, Score and Wald test) indicates that the model is statistically significant.   
+<br /> 
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out5-1.png){width=350px}  
+</center>
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out5-2.png){width=350px}
+</center>  
+<br />
+As for each variable in the model, it is shown by the above two tables that: variable k618 and hc both have p-value greater than 0.05, thus under significant level alpha being 0.05, they are not statistically significant. The reason for k618 might be that kids of 6-18 are much more independent than kids less than 6, and their mom could have time to work. Regarding hc, whether husband has attended college won’t really affect their wife’s decision on whether being in the labor force or not.
+
+Detailed Interpretations:      
+(Definition of z-score: the probit regression coefficients give the change in the probit index, also called a z-score, for a one unit increase in the predictor variable.)   
+•	k5: For each one more kid less than 6 years old, the z-score decreases by 0.8747.   
+•	k618: For each one more kid of 6-18 years old, the z-score decreases by 0.0386.   
+•	age: For one year increase in a woman’s age, the z-score decreases by 0.0378.   
+•	lwg: For a one unit increase in log(wage), the z-score increases by 0.3656.   
+•	inc: For a one unit increase in (family income – wage*hours)/1000, the z-score decreases by 0.0205.  
+•	wc: Wife having attended college would increases the z-score by 0.4883.  
+•	hc: Husband having attended college would increases the z-score by 0.0572.    
+
+#### 3.Marginal effect
+
+##### Marginal effects plot with 95%CI, for wc, at means:
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Marginal effects plot with 95%CI, for wc, at means*/
+* k5=0.238 k618=1.353 age=42.54 lwg=1.097 inc=20.13 hc=0.392*;
+*In this plot, actually we only need the 2 points on the curve: where wc=0 and wc=1*;
+proc logistic data=mroz descending plots=EFFECT;
+  class lfp / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+  output out=estimated predicted=estprob l=lower95 u=upper95;
+run;
+```
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/m_wc.png){width=500px}
+</center>  
+  
+  
+
+In this plot, actually we only need the 2 points on the curve: where wc=0 and wc=1.
+
+##### Marginal effects plot with 95%CI, for hc, at means:
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Marginal effects plot with 95%CI, for hc, at means*/
+* k5=0.238 k618=1.353 age=42.56 lwg=1.097 inc=20.13 wc=0.282*;
+*In this plot, actually we only need the 2 points on the curve: where hc=0 and hc=1*;
+proc logistic data=mroz descending plots=EFFECT;
+  class lfp / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+  output out=estimated predicted=estprob l=lower95 u=upper95;
+run;
+```
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/m_hc.png){width=500px}
+</center>
+
+In this plot, actually we only need the 2 points on the curve: where hc=0 and hc=1.
+
+##### Marginal effects plot for wc*hc, at means
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Marginal effects plot for wc*hc, at means*/
+proc logistic data=mroz descending plots=EFFECT;
+  class lfp wc hc / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+  output out=estimated predicted=estprob l=lower95 u=upper95;
+run;
+```
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out7.png){width=500px}
+</center>  
+  
+##### Diagnosis  
+
+The code above also creates several plots for model diagnosis: 
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out6-1.png){width=500px}
+</center>
+<center>
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/sas_out6-2.png){width=500px}
+</center>
+
+We can see from these diagonosis plots, the regression model's performance is not bad.
+
+## Summary
+Fitting data by probit regression, the coefficients of predictors have the similar result from R, Python, Stata, and SAS. For SAS, we have negative signs on the `hc`and `wc` coefficients. The reason is in SAS, function `proc logistic` models 0s rather than 1s by default. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, echo=FALSE}
+R=mroz.probit$coefficients
+PYTHON=c(1.9184,-0.8747,-0.0386,-0.0378,0.4883,0.0572,0.3656,-0.0205)
+STATA=c(1.918422,-0.8747111,-0.0385945,-0.0378235,0.4883144,0.0571703,0.3656287,-0.020525)
+SAS=c(2.4639,-0.8747,-0.0386,-0.0378,-0.4883,-0.0572,0.3656,-0.0205)
+df_compared=rbind(R,PYTHON,STATA,SAS)
+knitr::kable(df_compared,align = 'r')
+```
+
+If we choose the coefficients from R, the equation is
+
+$$probit(EY) = \Phi^{-1}(P_i[lfp=1]) = 1.918418-0.8747124\times k5
+ -0.03859517\times k618 -0.0378235\times age+  \\0.4883096\times wc + 
+ 0.0571716\times hc+  0.3656348\times lwg+ -0.02052513\times inc$$
+
+We do average marginal effects by the four languages. We also get the similar result.    
+We predict the probability of labor-force participation by grouping a variable, while keeping other variables at mean. Grouping by hc,there is no obivious difference between probability,which confirmed that hc is not an significant indicator in our model. We also do the same procedure for wc, age and k5. We can conclude that these varibles have effects on labor-force participation. 
+
+
+## References 
+
+- UCLA Probit Regression in R :  <br />
+https://stats.idre.ucla.edu/r/dae/probit-regression/
+
+- Probit Regression in Python: <br />
+http://www.statsmodels.org/0.6.1/examples/notebooks/generated/discrete_choice_overview.html
+https://www.statsmodels.org/dev/generated/statsmodels.discrete.discrete_model.Probit.html
+https://www.statsmodels.org/dev/examples/notebooks/generated/predict.html
+
+
+- Probit Regression in STATA : <br />
+https://stats.idre.ucla.edu/stata/dae/probit-regression/
+
+- Probit Regression in SAS : <br />
+https://communities.sas.com/t5/SAS-Programming/How-to-convert-Char-to-Numeric/td-p/322906
+https://communities.sas.com/t5/SAS-Programming/How-to-convert-Char-to-Numeric/td-p/322906
+
+
+
