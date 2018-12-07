@@ -31,46 +31,126 @@ X = data.drop(["lfp"], 1)
 
 #Transform into response and predictor variables
 
-
-# print(Y)
-#print(Y.dtypes)
-# #can drop from tabled based on column name
-
-#print(X.dtypes)
-
-# X = X.drop(X.columns[0], axis = 1)
-
-# print("y types:")
-# print(Y.dtypes)
-# print("x types:")
-# print(X.dtypes)
-
-#describe X and Y
+#add intercept term
 
 print(Y.describe())
 print(X.describe())
 
-# X["k5"] = X["k5"].astype('float')
-# X["k618"] = X["k618"].astype('float')
-# X["age"] = X["age"].astype('float')
-
-# Y = Y == "yes"
-# print(Y)
-
-#select data for training and testing
-
-# Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size = 0.2, random_state = 0)
-
-# print(Ytrain)
-# print(Xtrain)
-# print(Xtrain.dtypes)
-# print(Ytrain.dtypes)
-
+X = sm.add_constant(X)
 
 model = Probit(Y, X.astype(float))
-result = model.fit()
-print(result.summary())
+probit_model = model.fit()
+print(probit_model.summary())
 
+#get marginal effects
+
+mfx = probit_model.get_margeff()
+print(mfx.summary())
+
+#use pandas to generate table
+
+print(pd.crosstab(data["lfp"], data["hc"], margins = True))
+
+#calculate adjusted predictions of lfp and two levels of wc variable keeping other variables at mean
+#group by WC
+hc_data0 = np.column_stack((
+	1,
+	np.mean(data["k5"]),
+	np.mean(data["k618"]),
+	np.mean(data["age"]),
+	np.mean(data["wc"]),
+	0,
+	np.mean(data["lwg"]),
+	np.mean(data["inc"])
+	))
+
+hc_data1 = np.column_stack((
+	1,
+	np.mean(data["k5"]),
+	np.mean(data["k618"]),
+	np.mean(data["age"]),
+	np.mean(data["wc"]),
+	1,
+	np.mean(data["lwg"]),
+	np.mean(data["inc"])
+	))
+
+print(probit_model.predict(hc_data0))
+print(probit_model.predict(hc_data1))
+
+#group by wc
+print(pd.crosstab(data["lfp"], data["wc"], margins = True))
+
+wc_data0 = np.column_stack((
+	1,
+	np.mean(data["k5"]),
+	np.mean(data["k618"]),
+	np.mean(data["age"]),
+	0,
+	np.mean(data["hc"]),
+	np.mean(data["lwg"]),
+	np.mean(data["inc"])
+	))
+
+wc_data1 = np.column_stack((
+	1,
+	np.mean(data["k5"]),
+	np.mean(data["k618"]),
+	np.mean(data["age"]),
+	1,
+	np.mean(data["hc"]),
+	np.mean(data["lwg"]),
+	np.mean(data["inc"])
+	))
+
+print(probit_model.predict(wc_data0))
+print(probit_model.predict(wc_data1))
+
+#group by wc and age
+
+
+wc_data0 = np.column_stack((
+	np.repeat(1,4),
+	np.repeat(np.mean(data["k5"]),4),
+	np.repeat(np.mean(data["k618"]), 4),
+	(30,40,50,60),
+	np.repeat(0,4),
+	np.repeat(np.mean(data["hc"]),4),
+	np.repeat(np.mean(data["lwg"]),4),
+	np.repeat(np.mean(data["inc"]),4)
+	))
+
+wc_data1 = np.column_stack((
+	np.repeat(1,4),
+	np.repeat(np.mean(data["k5"]),4),
+	np.repeat(np.mean(data["k618"]), 4),
+	(30,40,50,60),
+	np.repeat(1,4),
+	np.repeat(np.mean(data["hc"]),4),
+	np.repeat(np.mean(data["lwg"]),4),
+	np.repeat(np.mean(data["inc"]),4)
+))
+
+print(probit_model.predict(wc_data0))
+print(probit_model.predict(wc_data1))
+
+
+#group by k5
+
+print(pd.crosstab(data["lfp"], data["k5"], margins = True))
+
+k5_data = np.column_stack((
+	np.repeat(1,4),
+	(0,1,2,3),
+	np.repeat(np.mean(data["k618"]), 4),
+	np.repeat(np.mean(data["age"]),4),
+	np.repeat(np.mean(data["wc"]),4),
+	np.repeat(np.mean(data["hc"]),4),
+	np.repeat(np.mean(data["lwg"]),4),
+	np.repeat(np.mean(data["inc"]),4)
+	))
+
+print(probit_model.predict(k5_data))
 
 if __name__ == "__main__":
 	print("running probit regression")

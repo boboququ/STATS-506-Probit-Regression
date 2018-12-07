@@ -152,19 +152,18 @@ $(document).ready(function () {
 </div>
 <div id="python" class="section level3">
 <h3>Python</h3>
-<p>TODO: See if Python Chunks works in R markdown. Maybe add output as images instead of chunks.</p>
-<div id="loading-data" class="section level4">
-<h4>Loading Data</h4>
-<p>The data set has binary response variable lfp which stands for labor force participation</p>
-<p>First we start by loading the data into memory using pandas package. We also load some relevant packages used in this analysis.</p>
+<div id="data-summary" class="section level4">
+<h4>Data Summary</h4>
+<p>First we start by loading the data into memory using the pandas package. The data is read in as a pandas dataframe, which is very similar to a R dataframe.</p>
+<p>We also load numpy for array manipulation and we will be using the statsmodel package for Probit regression.</p>
 <pre><code>import pandas as pd
 import numpy as np
 from statsmodels.discrete.discrete_model import Probit
 
-data = pd.read_csv('https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv')
-
-print(data.head())</code></pre>
-<p>This looks like</p>
+data = pd.read_csv('https://vincentarelbundock.github.io/Rdatasets/csv/carData/Mroz.csv')</code></pre>
+<p>To print the first few rows of the data, we use the head function. This is similar to other languages such as R.</p>
+<pre><code>print(data.head())
+</code></pre>
 <pre><code>
    Unnamed: 0  lfp  k5  k618  age   wc  hc       lwg        inc
 0           1  yes   1     0   32   no  no  1.210165  10.910001
@@ -177,7 +176,7 @@ print(data.head())</code></pre>
 </div>
 <div id="data-cleaning" class="section level4">
 <h4>Data Cleaning</h4>
-<p>Since some data is read in as strings we can transform them into binary categorical data using the following command. We also drop the first column as it is read in with row numbers, which we do not need.</p>
+<p>Since some of the data is read in as strings, we need to transform them into binary categorical data using the following code. We also drop the first column as it is read in with row numbers, which we do not need.</p>
 <pre><code>data = data.drop(data.columns[0], axis = 1)
 
 data[&quot;lfp&quot;] = data[&quot;lfp&quot;] == &quot;yes&quot;
@@ -197,7 +196,7 @@ data[&quot;hc&quot;] = data[&quot;hc&quot;] == &quot;yes&quot;
 </div>
 <div id="summary-statistics" class="section level4">
 <h4>Summary Statistics</h4>
-<p>To generate some summary statistics we can use the functions describe on a data frame.</p>
+<p>Before we begin our analysis here is a quick summary of the data. We use the function describe on our dataframe to generate some summary statistics.</p>
 <pre><code>print(data.describe())
 </code></pre>
 <p>This generates summary statistics for the continuous variables in our dataset.</p>
@@ -212,41 +211,183 @@ min      0.000000    0.000000   30.000000   -2.054124   -0.029000
 max      3.000000    8.000000   60.000000    3.218876   96.000000
 </code></pre>
 </div>
-<div id="fitting-regression" class="section level4">
-<h4>Fitting Regression</h4>
-<p>First we break our dataset into response variable and predictor variables. Then we use the statsmodels function to fit our Probit regression.</p>
+<div id="fitting-probit-regression" class="section level4">
+<h4>Fitting Probit Regression</h4>
+<p>First we break our dataset into response variable and predictor variables. We will use lfp as our response variable and all the remaining variable as predictors. Then we use the statsmodels function to fit our Probit regression with our response variable and design matrix. The statsmodels package is unique from other languages and packages as it does not include an intercept term by default. This needs to be manually set.</p>
 <pre><code>Y = data[&quot;lfp&quot;]
 X = data.drop([&quot;lfp&quot;], 1)
+X = sm.add_constant(X)
 
 model = Probit(Y, X.astype(float))
-result = model.fit()
-print(result.summary())
+probit_model = model.fit()
+print(probit_model.summary())
 </code></pre>
-<p>The following is the results of our regression</p>
+<p>The following is the results of our regression. The statsmodels package automatically includes p values and confidence intervals for each coefficient. For those that are familiar with objects, the probit model is stored as a probit model object in Python. All operations with the model are invoked as model.member_function().</p>
 <pre><code>Optimization terminated successfully.
-         Current function value: 0.618620
+         Current function value: 0.601189
          Iterations 5
                           Probit Regression Results                           
 ==============================================================================
 Dep. Variable:                    lfp   No. Observations:                  753
-Model:                         Probit   Df Residuals:                      746
-Method:                           MLE   Df Model:                            6
-Date:                Mon, 26 Nov 2018   Pseudo R-squ.:                 0.09527
-Time:                        23:16:26   Log-Likelihood:                -465.82
+Model:                         Probit   Df Residuals:                      745
+Method:                           MLE   Df Model:                            7
+Date:                Fri, 07 Dec 2018   Pseudo R-squ.:                  0.1208
+Time:                        01:40:27   Log-Likelihood:                -452.69
 converged:                       True   LL-Null:                       -514.87
-                                        LLR p-value:                 6.234e-19
+                                        LLR p-value:                 9.471e-24
 ==============================================================================
                  coef    std err          z      P&gt;|z|      [0.025      0.975]
 ------------------------------------------------------------------------------
-k5            -0.6136      0.098     -6.249      0.000      -0.806      -0.421
-k618           0.0674      0.034      1.965      0.049       0.000       0.135
-age           -0.0021      0.003     -0.775      0.439      -0.007       0.003
-wc             0.4497      0.133      3.372      0.001       0.188       0.711
-hc             0.1267      0.122      1.040      0.298      -0.112       0.365
-lwg            0.4632      0.084      5.486      0.000       0.298       0.629
-inc           -0.0187      0.005     -3.983      0.000      -0.028      -0.010
+const          1.9184      0.381      5.040      0.000       1.172       2.664
+k5            -0.8747      0.114     -7.703      0.000      -1.097      -0.652
+k618          -0.0386      0.040     -0.953      0.340      -0.118       0.041
+age           -0.0378      0.008     -4.971      0.000      -0.053      -0.023
+wc             0.4883      0.135      3.604      0.000       0.223       0.754
+hc             0.0572      0.124      0.461      0.645      -0.186       0.300
+lwg            0.3656      0.088      4.165      0.000       0.194       0.538
+inc           -0.0205      0.005     -4.297      0.000      -0.030      -0.011
 ==============================================================================
 </code></pre>
+<p>It appears that all our predictors are statistically significant at level a except hc and k618.</p>
+</div>
+<div id="marginal-effects" class="section level4">
+<h4>Marginal Effects</h4>
+<p>To better understand why our predictors are significant, we attempt to study the marginal effects of our predictors. In this section, we will look at the predictors hc, wc, age, and k5. Unfortunately, there is no member function of the probit class to calculate the standard error of each prediction so this is ommited in this version.</p>
+<div id="group-by-husbands-college-attendance" class="section level5">
+<h5>Group by Husband’s College Attendance</h5>
+<p>First we group the data by hc.</p>
+<p>To better understand hc, we tabulate lfp and hc. This is done with the pandas crosstab function.</p>
+<pre><code>print(pd.crosstab(data[&quot;lfp&quot;], data[&quot;hc&quot;], margins = True))</code></pre>
+<pre><code>hc     False  True  All
+lfp                    
+False    207   118  325
+True     251   177  428
+All      458   295  753</code></pre>
+<p>Then we calculate adjusted predictions of lfp for two levels of the hc variable. Creating these adjusted predictors is not very clean in Python compared to other languages. We have to build the array from scratch.</p>
+<pre><code>hc_data0 = np.column_stack((
+    1,
+    np.mean(data[&quot;k5&quot;]),
+    np.mean(data[&quot;k618&quot;]),
+    np.mean(data[&quot;age&quot;]),
+    np.mean(data[&quot;wc&quot;]),
+    0,
+    np.mean(data[&quot;lwg&quot;]),
+    np.mean(data[&quot;inc&quot;])
+    ))
+    
+    hc_data1 = np.column_stack((
+    1,
+    np.mean(data[&quot;k5&quot;]),
+    np.mean(data[&quot;k618&quot;]),
+    np.mean(data[&quot;age&quot;]),
+    np.mean(data[&quot;wc&quot;]),
+    1,
+    np.mean(data[&quot;lwg&quot;]),
+    np.mean(data[&quot;inc&quot;])
+    ))</code></pre>
+<p>The results of running this prediction is as follows.</p>
+<pre><code>print(probit_model.predict(hc_data0))
+print(probit_model.predict(hc_data1))
+</code></pre>
+<pre><code>[ 0.56938181]
+[ 0.59171968]
+</code></pre>
+<p>We see that the marginal probability of husband being a collage graduate is 0.59, while the marginal probability of husband being a high school graduate is lower at 0.57.</p>
+</div>
+<div id="group-by-wifes-college-attendance" class="section level5">
+<h5>Group by Wife’s College Attendance</h5>
+<p>Similarly to hc, we tabulate our response variable lfp and predictor wc. We can see that there is a significant imbalance between labor force participation for women that are college graduates.</p>
+<pre><code>print(pd.crosstab(data[&quot;lfp&quot;], data[&quot;wc&quot;], margins = True))</code></pre>
+<pre><code>wc     False  True  All
+lfp                    
+False    257    68  325
+True     284   144  428
+All      541   212  753</code></pre>
+<p>We also calculate the adjusted predictions of lfp for the two levels of wc variable, while keeping other variables at the mean.</p>
+<pre><code>
+wc_data0 = np.column_stack((
+    1,
+    np.mean(data[&quot;k5&quot;]),
+    np.mean(data[&quot;k618&quot;]),
+    np.mean(data[&quot;age&quot;]),
+    0,
+    np.mean(data[&quot;hc&quot;]),
+    np.mean(data[&quot;lwg&quot;]),
+    np.mean(data[&quot;inc&quot;])
+    ))
+
+wc_data1 = np.column_stack((
+    1,
+    np.mean(data[&quot;k5&quot;]),
+    np.mean(data[&quot;k618&quot;]),
+    np.mean(data[&quot;age&quot;]),
+    1,
+    np.mean(data[&quot;hc&quot;]),
+    np.mean(data[&quot;lwg&quot;]),
+    np.mean(data[&quot;inc&quot;])
+    ))
+
+</code></pre>
+<p>The result of running this prediction is as follows:</p>
+<pre><code>print(probit_model.predict(wc_data0))
+print(probit_model.predict(wc_data1))</code></pre>
+<pre><code>[ 0.52380974]
+[ 0.70816505]</code></pre>
+<p>It appears that the marginal probability increases from 0.524 to 0.708 when women are college graduates compared to highschool graduates.</p>
+</div>
+<div id="group-by-age-and-wifes-college-attendance" class="section level5">
+<h5>Group by Age and Wife’s College Attendance</h5>
+<p>We can predict the outcome variable by both age and women’s college education. We use increments of 10 between 30 and 60 as our representative ages.</p>
+<pre><code>wc_data0 = np.column_stack((
+    np.repeat(1,4),
+    np.repeat(np.mean(data[&quot;k5&quot;]),4),
+    np.repeat(np.mean(data[&quot;k618&quot;]), 4),
+    (30,40,50,60),
+    np.repeat(0,4),
+    np.repeat(np.mean(data[&quot;hc&quot;]),4),
+    np.repeat(np.mean(data[&quot;lwg&quot;]),4),
+    np.repeat(np.mean(data[&quot;inc&quot;]),4)
+    ))
+
+wc_data1 = np.column_stack((
+    np.repeat(1,4),
+    np.repeat(np.mean(data[&quot;k5&quot;]),4),
+    np.repeat(np.mean(data[&quot;k618&quot;]), 4),
+    (30,40,50,60),
+    np.repeat(1,4),
+    np.repeat(np.mean(data[&quot;hc&quot;]),4),
+    np.repeat(np.mean(data[&quot;lwg&quot;]),4),
+    np.repeat(np.mean(data[&quot;inc&quot;]),4)
+))</code></pre>
+<pre><code>print(probit_model.predict(wc_data0))
+print(probit_model.predict(wc_data1))</code></pre>
+</div>
+<div id="group-by-number-of-children-5-years-or-younger-k5" class="section level5">
+<h5>Group by Number of Children 5 years or younger (K5)</h5>
+</div>
+<div id="extension" class="section level5">
+<h5>Extension</h5>
+<p>Finally, an overall marginal effect can be observed by calling the get_margeff() method of the probit model class. This is unique to Python. Results are as follows.</p>
+<pre><code>mfx = probit_model.get_margeff()
+print(mfx.summary())</code></pre>
+<pre><code> Probit Marginal Effects       
+=====================================
+Dep. Variable:                    lfp
+Method:                          dydx
+At:                           overall
+==============================================================================
+                dy/dx    std err          z      P&gt;|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+k5            -0.2997      0.034     -8.726      0.000      -0.367      -0.232
+k618          -0.0132      0.014     -0.955      0.340      -0.040       0.014
+age           -0.0130      0.002     -5.219      0.000      -0.018      -0.008
+wc             0.1673      0.045      3.696      0.000       0.079       0.256
+hc             0.0196      0.042      0.461      0.645      -0.064       0.103
+lwg            0.1253      0.029      4.311      0.000       0.068       0.182
+inc           -0.0070      0.002     -4.451      0.000      -0.010      -0.004
+==============================================================================
+</code></pre>
+</div>
 </div>
 </div>
 <div id="stata" class="section level3">
