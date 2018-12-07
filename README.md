@@ -7,13 +7,13 @@ For Python, R(base), STATA and SAS, we all use the same dataset, which could be 
 
 ## Languages 
 The source code file of each language can be found here:
-[R](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Group_project.R),
-[Python](https://github.com/boboququ/STATS-506-Probit-Regression/tree/talibova-patch-1/Python),
-[STATA](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Stata/Stata_probit.do),
+[R](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/R/Group_project.R),
+[Python](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/Python/probit_regression.py),
+[STATA](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/Stata/Stata_probit.do),
 [SAS](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/SAS/mroz_ls.sas).
 
 ## Result
-By using Rmarkdown (Source code: [Group_project.Rmd](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Group_project.Rmd)), we created a HTML file: [Group_project.html](https://github.com/boboququ/STATS-506-Probit-Regression/blob/talibova-patch-1/Group_project.html) to present our tutorial.
+By using Rmarkdown (Source code: [Group_project.Rmd](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/Group_Final.Rmd)), we created a HTML file: [Group_project.html](https://github.com/boboququ/STATS-506-Probit-Regression/blob/master/Group_Final.html) to present our tutorial.
 
 ## Contributing
 R & Dataset survey: Roya Talibova, <talibova@umich.edu>   
