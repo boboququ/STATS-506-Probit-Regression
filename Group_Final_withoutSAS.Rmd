@@ -705,9 +705,158 @@ decreasing. Therefore, we can conclude that k5 is a significant predictor.
 
 ###SAS
 
+#### 1.Data Summary
+
+Since for the original mroz.csv dataset, there are three covariates whose variable type are binary charater ("yes/no"): lfp, wc, hc. In this part, a processed data file would be used, where the values of the three character type variables are transfered from "yes/no" to numeric 1/0. 
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+<<<<<<< HEAD
+/*Importing data*/
+proc import datafile = 'C:\Users\lanshi\Desktop\Mroz.csv'
+  out = work.mroz
+  dbms = CSV
+  ;
+run;
+```
+
+/*Import the dataset.*/
+proc import datafile = 'Mroz.csv' out=mroz;
+
+/*Display the first 10 rows.*/
+proc print data=mroz(obs=10);
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/data1.png){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Transfer character form ("yes/no") variables (lfp, wc, hc) into binary form (0/1).*/
+proc format;
+	invalue L
+		'yes'=1 'no'=0;
+run;
+		
+data mroz;
+	set mroz;
+	lfp1 = input(lfp,L.);
+	wc1 = input(wc,L.);
+	hc1 = input(hc,L.);
+run;
+		
+data mroz;
+	set mroz (drop = lfp wc hc);
+run;
+		
+data mroz;
+	set mroz (rename=(lfp1=lfp hc1=hc wc1=wc));
+run;
+		
+/*The transfered dataset*/
+proc print data=mroz(obs=10);
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/data2.png){width=500px}
+
+Display the summary table of the dataset (Seperate the 3 binary variables and the others).
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*For the other non-binary variables*/
+proc means data=mroz;
+ var k5 k618 age lwg inc;
+run;
+```
+
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out1.png){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*For those 3 binary variables, consider individuals and interactions between reponse and wc/hc.*/
+proc freq data=mroz;
+ tables lfp wc hc lfp*wc lfp*hc;
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out2.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out3.png){width=500px}
 
 
+#### 2.Fitting model by Probit Regression
 
+Now, we fit our data by probit regression. lfp is the response and the remaining variables
+are predictors. By adding argument "descending", we would be able to model 1s rather than 0s, which means predicting the probability of woman getting into label force (lfp=1) versus not getting in (lfp=0).
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Fitting the data by probit regression*/
+proc logistic data=mroz descending;
+  class lfp wc hc / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+run;
+```
+
+Here are the results we get from the regression:
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out4-2.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out4-3.png){width=500px}
+The result of the Global Null Hypothesis (by Likelihood Ratio, Score and Wald test) indicates that the model is statistically significant. 
+
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out5-1.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out5-2.png){width=500px}
+
+As for each variable in the model, it is shown by the above two tables that: variable k618 and hc both have p-value greater than 0.05, thus under significant level alpha being 0.05, they are not statistically significant. The reason for k618 might be that kids of 6-18 are much more independent than kids less than 6, and their mom could have time to work. Regarding hc, whether husband has attended college won’t really affect their wife’s decision on whether being in the labor force or not.
+
+Detailed Interpretations:
+(Definition of z-score: the probit regression coefficients give the change in the probit index, also called a z-score, for a one unit increase in the predictor variable.)
+•	k5: For each one more kid less than 6 years old, the z-score decreases by 0.8747.
+•	k618: For each one more kid of 6-18 years old, the z-score decreases by 0.0386.
+•	age: For one year increase in a woman’s age, the z-score decreases by 0.0378.
+•	lwg: For a one unit increase in log(wage), the z-score increases by 0.3656.
+•	inc: For a one unit increase in (family income – wage*hours)/1000, the z-score decreases by 0.0205.
+•	wc: Wife having attended college would increases the z-score by 0.4883.
+•	hc: Husband having attended college would increases the z-score by 0.0572.
+
+#### 3.Marginal effect
+
+Now, we predict the data for groups defined by levels of categorical variables. Keeping other variables at mean.
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Fitting the data by probit regression*/
+=======
+##### Marginal effects plot with 95%CI, for wc, at means:
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Marginal effects plot with 95%CI, for wc, at means*/
+* k5=0.238 k618=1.353 age=42.54 lwg=1.097 inc=20.13 hc=0.392*;
+*In this plot, actually we only need the 2 points on the curve: where wc=0 and wc=1*;
+proc logistic data=mroz descending plots=EFFECT;
+  class lfp / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+  output out=estimated predicted=estprob l=lower95 u=upper95;
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/m_wc.png){width=500px}
+In this plot, actually we only need the 2 points on the curve: where wc=0 and wc=1.
+
+##### Marginal effects plot with 95%CI, for hc, at means:
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Marginal effects plot with 95%CI, for hc, at means*/
+* k5=0.238 k618=1.353 age=42.56 lwg=1.097 inc=20.13 wc=0.282*;
+*In this plot, actually we only need the 2 points on the curve: where hc=0 and hc=1*;
+proc logistic data=mroz descending plots=EFFECT;
+  class lfp / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+  output out=estimated predicted=estprob l=lower95 u=upper95;
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/m_hc.png){width=500px}
+In this plot, actually we only need the 2 points on the curve: where hc=0 and hc=1.
+
+##### Marginal effects plot for wc*hc, at means
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Marginal effects plot for wc*hc, at means*/
+proc logistic data=mroz descending plots=EFFECT;
+  class lfp wc hc / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+  output out=estimated predicted=estprob l=lower95 u=upper95;
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out7.png){width=500px}
+The code above also creates several plots for model diagnosis: 
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out6-1.png){width=500px}
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/tree/master/SAS/sas_outs/sas_out6-2.png){width=500px}
+We can see from these diagonosis plots, the regression model's performance is not bad.
 
 
 ## Summary
