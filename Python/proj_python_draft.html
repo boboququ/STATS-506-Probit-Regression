@@ -359,11 +359,38 @@ wc_data1 = np.column_stack((
     np.repeat(np.mean(data[&quot;lwg&quot;]),4),
     np.repeat(np.mean(data[&quot;inc&quot;]),4)
 ))</code></pre>
+<p>The results of running the prediction is as follows:</p>
 <pre><code>print(probit_model.predict(wc_data0))
 print(probit_model.predict(wc_data1))</code></pre>
+<pre><code>[ 0.70330952  0.5618684   0.41195181  0.27399923]
+[ 0.84667045  0.74021954  0.6047985   0.45523423]</code></pre>
+<p>As we can see, the older a women gets, the less chance of her participating in the labor force. Regardless of age, women’s college education always yields a higher probability of labor force participation.</p>
 </div>
 <div id="group-by-number-of-children-5-years-or-younger-k5" class="section level5">
 <h5>Group by Number of Children 5 years or younger (K5)</h5>
+<p>Finally we look at the effects of number of children 5 years or younger. As before, here is a cross tabulation of this variable.</p>
+<pre><code>print(pd.crosstab(data[&quot;lfp&quot;], data[&quot;k5&quot;], margins = True))</code></pre>
+<pre><code>k5       0    1   2  3  All
+lfp                        
+False  231   72  19  3  325
+True   375   46   7  0  428
+All    606  118  26  3  753</code></pre>
+<p>Then we predict lfp at different levels of k5, while keeping other variables at their means.</p>
+<pre><code>k5_data = np.column_stack((
+    np.repeat(1,4),
+    (0,1,2,3),
+    np.repeat(np.mean(data[&quot;k618&quot;]), 4),
+    np.repeat(np.mean(data[&quot;age&quot;]),4),
+    np.repeat(np.mean(data[&quot;wc&quot;]),4),
+    np.repeat(np.mean(data[&quot;hc&quot;]),4),
+    np.repeat(np.mean(data[&quot;lwg&quot;]),4),
+    np.repeat(np.mean(data[&quot;inc&quot;]),4)
+    ))
+    
+    print(probit_model.predict(k5_data))
+</code></pre>
+<pre><code>[ 0.65730924  0.31932735  0.08942703  0.01324326]</code></pre>
+<p>We see that if there are three or more children under the age of 5, there is a 0.013 chance of a woman being in the work force, but when there is no children there is a 0.6573 chance. This is a good indication of the significance of this variable.</p>
 </div>
 <div id="extension" class="section level5">
 <h5>Extension</h5>
@@ -388,6 +415,10 @@ inc           -0.0070      0.002     -4.451      0.000      -0.010      -0.004
 ==============================================================================
 </code></pre>
 </div>
+</div>
+<div id="resources" class="section level4">
+<h4>Resources:</h4>
+<p><a href="http://www.statsmodels.org/0.6.1/examples/notebooks/generated/discrete_choice_overview.html" class="uri">http://www.statsmodels.org/0.6.1/examples/notebooks/generated/discrete_choice_overview.html</a> <a href="https://www.statsmodels.org/dev/generated/statsmodels.discrete.discrete_model.Probit.html" class="uri">https://www.statsmodels.org/dev/generated/statsmodels.discrete.discrete_model.Probit.html</a> <a href="https://www.statsmodels.org/dev/examples/notebooks/generated/predict.html" class="uri">https://www.statsmodels.org/dev/examples/notebooks/generated/predict.html</a></p>
 </div>
 </div>
 <div id="stata" class="section level3">

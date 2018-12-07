@@ -388,6 +388,14 @@ inc           -0.0070      0.002     -4.451      0.000      -0.010      -0.004
 ==============================================================================
 
 ```
+
+
+####Resources: 
+http://www.statsmodels.org/0.6.1/examples/notebooks/generated/discrete_choice_overview.html
+https://www.statsmodels.org/dev/generated/statsmodels.discrete.discrete_model.Probit.html
+https://www.statsmodels.org/dev/examples/notebooks/generated/predict.html
+
+
 ###Stata
 
 (tab content)
