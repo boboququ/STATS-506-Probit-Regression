@@ -375,6 +375,7 @@ decreasing. Therefore, we can conclude that k5 is a significant predictor.
 Since for the original mroz.csv dataset, there are three covariates whose variable type are binary charater ("yes/no"): lfp, wc, hc. In this part, a processed data file would be used, where the values of the three character type variables are transfered from "yes/no" to numeric 1/0. 
 
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+<<<<<<< HEAD
 /*Importing data*/
 proc import datafile = 'C:\Users\lanshi\Desktop\Mroz.csv'
   out = work.mroz
@@ -382,6 +383,44 @@ proc import datafile = 'C:\Users\lanshi\Desktop\Mroz.csv'
   ;
 run;
 ```
+=======
+/*Import the dataset.*/
+proc import datafile = 'Mroz.csv' out=mroz;
+
+/*Display the first 10 rows.*/
+proc print data=mroz(obs=10);
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/data1.png){width=500px}
+
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Transfer character form ("yes/no") variables (lfp, wc, hc) into binary form (0/1).*/
+proc format;
+	invalue L
+		'yes'=1 'no'=0;
+run;
+		
+data mroz;
+	set mroz;
+	lfp1 = input(lfp,L.);
+	wc1 = input(wc,L.);
+	hc1 = input(hc,L.);
+run;
+		
+data mroz;
+	set mroz (drop = lfp wc hc);
+run;
+		
+data mroz;
+	set mroz (rename=(lfp1=lfp hc1=hc wc1=wc));
+run;
+		
+/*The transfered dataset*/
+proc print data=mroz(obs=10);
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/data2.png){width=500px}
+>>>>>>> sas completed
 
 Display the summary table of the dataset (Seperate the 3 binary variables and the others).
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
@@ -404,7 +443,11 @@ run;
 
 
 #### 2.Fitting model by Probit Regression
+<<<<<<< HEAD
 >>>>>>> 16bbf44cc96e1399eac40d66dc663801bc230857
+=======
+
+>>>>>>> sas completed
 Now, we fit our data by probit regression. lfp is the response and the remaining variables
 are predictors. By adding argument "descending", we would be able to model 1s rather than 0s, which means predicting the probability of woman getting into label force (lfp=1) versus not getting in (lfp=0).
 
@@ -437,10 +480,44 @@ Detailed Interpretations:
 •	hc: Husband having attended college would increases the z-score by 0.0572.
 
 #### 3.Marginal effect
+<<<<<<< HEAD
 
 Now, we predict the data for groups defined by levels of categorical variables. Keeping other variables at mean.
 ```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
 /*Fitting the data by probit regression*/
+=======
+##### Marginal effects plot with 95%CI, for wc, at means:
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Marginal effects plot with 95%CI, for wc, at means*/
+* k5=0.238 k618=1.353 age=42.54 lwg=1.097 inc=20.13 hc=0.392*;
+*In this plot, actually we only need the 2 points on the curve: where wc=0 and wc=1*;
+proc logistic data=mroz descending plots=EFFECT;
+  class lfp / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+  output out=estimated predicted=estprob l=lower95 u=upper95;
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/m_wc.png){width=500px}
+In this plot, actually we only need the 2 points on the curve: where wc=0 and wc=1.
+
+##### Marginal effects plot with 95%CI, for hc, at means:
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Marginal effects plot with 95%CI, for hc, at means*/
+* k5=0.238 k618=1.353 age=42.56 lwg=1.097 inc=20.13 wc=0.282*;
+*In this plot, actually we only need the 2 points on the curve: where hc=0 and hc=1*;
+proc logistic data=mroz descending plots=EFFECT;
+  class lfp / param=ref ;
+  model lfp = k5 k618 age lwg inc wc hc /link=probit;
+  output out=estimated predicted=estprob l=lower95 u=upper95;
+run;
+```
+![](https://raw.githubusercontent.com/boboququ/STATS-506-Probit-Regression/master/SAS/sas_outs/m_hc.png){width=500px}
+In this plot, actually we only need the 2 points on the curve: where hc=0 and hc=1.
+
+##### Marginal effects plot for wc*hc, at means
+```{r, error=TRUE, warning = FALSE, message=FALSE, eval=FALSE}
+/*Marginal effects plot for wc*hc, at means*/
+>>>>>>> sas completed
 proc logistic data=mroz descending plots=EFFECT;
   class lfp wc hc / param=ref ;
   model lfp = k5 k618 age lwg inc wc hc /link=probit;
