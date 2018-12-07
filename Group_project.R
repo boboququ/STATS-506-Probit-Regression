@@ -10,8 +10,7 @@
 
 
 # Libraries: ------------------------------------------------------------------
-#install.packages(c("effects", "tidyverse"))
-library(effects)
+#install.packages(c("ggplot2", "tidyverse"))
 library(ggplot2)
 
 ##Set the working directory
@@ -70,7 +69,7 @@ w1 = predict(mroz.probit, wc_data1, type="response", se=TRUE)
 wc_fit = data.frame(Margin = c(w0$fit[1], w1$fit[1]), se=c(w0$se.fit[1], w1$se.fit[1]))
 wc_fit
 
-##Grouped by age and wc
+## Adjusted predictions of lfp for two levels of wc and representative ages
 wc_data0_age=data.frame(k5=rep(mean(mroz$k5), 4), k618=rep(mean(mroz$k618), 4), 
                         age=c(30, 40, 50, 60), lwg=rep(mean(mroz$lwg), 4), 
                         inc=rep(mean(mroz$inc), 4), wc=rep(0, 4), 
@@ -87,7 +86,7 @@ m1=predict(mroz.probit, wc_data1_age, type="response", se=TRUE)
 wc_fit_age = data.frame(Margin_wc0=m0$fit, Margin_wc1=m1$fit, se_wc0=m0$se.fit, se_wc1=m1$se.fit)
 wc_fit_age
 
-##Grouped by K5
+## Adjusted predictions of lfp for different levels of k5
 addmargins(table(mroz$lfp, mroz$k5, deparse.level=2))
 k_data=data.frame(k5=c(0,1,2,3), k618=rep(mean(mroz$k618), 4), age=rep(mean(mroz$age), 4), 
                   lwg=rep(mean(mroz$lwg), 4), inc=rep(mean(mroz$inc), 4), 
@@ -100,17 +99,20 @@ k_fit
 
 ##Marginal plots
 Age=c(30, 40, 50, 60)
+k5=c(0, 1, 2, 3)
+
 ggplot(data=wc_fit_age,aes(y=Age)) +
   geom_line(aes( x= Margin_wc0), colour="blue") +
-  geom_errorbarh(aes(xmin=Margin_wc0-2*se_wc0, xmax=Margin_wc0+2*se_wc0), height=.1,colour="blue")+
+  geom_errorbarh(aes(xmin=Margin_wc0-2*se_wc0, xmax=Margin_wc0+2*se_wc0), height=.1, colour="blue")+
   geom_line(aes(x = Margin_wc1), colour="red")+
   geom_errorbarh(aes(xmin=Margin_wc1-2*se_wc1, xmax=Margin_wc1+2*se_wc1),
-                 height=.1,colour="red")+
+                 height=.1,colour="red")+scale_color_manual(labels = c("wc=0","wc=1"), values = c("blue", "red"))+
   coord_flip()+xlab('Probability(Lfp)') +
   ylab("Age")
 
-##Plot the marginal effects ------------------------------------------------------------
-
-all.effects <- allEffects(mod = mroz.probit)
-plot(all.effects, type="response", ylim=c(0,1))
+ggplot(data=k_fit,aes(y=k5)) +
+  geom_line(aes( x= Margin_k), colour="blue") +
+  geom_errorbarh(aes(xmin=Margin_k-2*se_k, xmax=Margin_k+2*se_k), height=.1, colour="blue")+
+  coord_flip()+xlab('Probability(Lfp)') +
+  ylab("k5")
 
